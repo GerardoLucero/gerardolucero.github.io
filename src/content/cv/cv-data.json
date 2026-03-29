@@ -33,16 +33,16 @@
       "startYear": 2024,
       "location": "Mexico City, Mexico",
       "type": "Full-time",
-      "description": "Designed and implemented cloud-native solutions on AWS using ECS and Lambda, prioritizing scalability, resilience, and security. Built an Internal Developer Platform (IDP) for Kubernetes supporting multiple deployment stacks, enabling teams to self-serve infrastructure consistently. Implemented Karpenter for dynamic worker node optimization and Jenkins-based pipelines for standardized delivery. Proposed and led architecture initiatives including a generic batch orchestration framework with Feature Store integration and a centralized authentication layer. Strengthened observability through Dynatrace and led the OpenShift transition strategy aligned with business roadmaps.",
+      "description": "Founded and led the Architecture Squad — a cross-functional governance body that defined architecture standards, maturity frameworks, and reference architectures adopted across 7+ engineering teams. Designed cloud-native solutions on AWS (CodePipeline, CodeBuild, ECS, Lambda, Glue) and built an Internal Developer Platform (IDP) on Kubernetes enabling self-service infrastructure. Drove organizational alignment through ADRs, C4 documentation, and a 5-level maturity model covering architecture, security, infrastructure automation, and observability.",
       "highlights": [
-        "Internal Developer Platform (IDP) on Kubernetes — multi-stack deployments, golden paths and self-service infrastructure for engineering teams",
-        "Karpenter + Jenkins: dynamic worker node scaling and standardized CI/CD pipelines",
-        "Batch system processing 1M employment history records in under 3 minutes — AWS Glue Jobs + RDS queries with Feature Store integration for ML workloads",
-        "Centralized authentication layer — unified identity and access control across services",
-        "Dynatrace observability with SLO/SLI definition and distributed tracing across teams",
-        "OpenShift transition strategy aligned with product and business roadmaps"
+        "Founded Architecture Squad — governance model with maturity matrix (5 levels × 8 dimensions) and technology catalog adopted by 7+ teams",
+        "Reference architectures (DDD, EDA, hexagonal) and ADR/C4 documentation standards rolled out organization-wide",
+        "Internal Developer Platform (IDP) on Kubernetes — golden paths, multi-stack self-service deployments, AWS CodePipeline + CodeBuild pipelines",
+        "Batch system processing 1M employment history records in under 3 minutes — AWS Glue Jobs + RDS + Feature Store integration for ML workloads",
+        "Karpenter dynamic node scaling, centralized authentication layer, and Dynatrace observability with SLO/SLI definition",
+        "OpenShift transition strategy and coached 7+ engineering teams on architecture practices and cloud-native delivery"
       ],
-      "tags": ["AWS", "Kubernetes", "IDP", "Karpenter", "Jenkins", "OpenShift", "AWS Glue", "Feature Store", "Dynatrace", "SLO/SLI"]
+      "tags": ["AWS", "CodePipeline", "CodeBuild", "Kubernetes", "IDP", "Architecture Governance", "Karpenter", "Jenkins", "OpenShift", "AWS Glue", "Feature Store", "Dynatrace", "SLO/SLI", "ADR", "C4", "DDD", "EDA"]
     },
     {
       "title": "Solutions Architect / Tech Lead Product",
