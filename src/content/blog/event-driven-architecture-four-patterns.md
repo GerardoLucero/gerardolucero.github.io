@@ -6,9 +6,9 @@ tags: ["event-driven-architecture", "kafka", "java", "microservices", "distribut
 draft: false
 ---
 
-Most articles about Event-Driven Architecture (EDA) stop at the whiteboard. They explain the concept, draw some boxes with arrows, and leave you to figure out the implementation. This post is different.
+I spent years building event-driven systems inside Mexican financial institutions — first at Círculo de Crédito (Mexico's credit bureau), coordinating across 7+ product and engineering teams, and later at Grupo Findep as lead of the Architecture Squad, where we processed roughly 400,000 loan applications per month and handled 200 million transactions. In both places, EDA wasn't a pattern we adopted for its elegance. We adopted it because synchronous systems were failing under the load and we needed audit trails that could survive a regulatory audit.
 
-After designing and operating event-driven systems at scale in high-compliance, high-throughput financial environments, I want to share the four patterns that actually matter — not as theory, but as production-tested implementations with Spring Boot and Kafka. I'll also cover the part most tutorials skip: security at the event layer.
+This post shares the four patterns that actually mattered in those environments. Not theory — implementations I've used in production with Spring Boot and Kafka, including the part most tutorials skip: security at the event layer.
 
 ---
 
@@ -16,7 +16,9 @@ After designing and operating event-driven systems at scale in high-compliance, 
 
 Before the patterns, the *why*. Synchronous request-response architectures create invisible coupling. When Service A calls Service B directly, you've bound their lifecycles together — a B outage becomes an A outage. At scale, this becomes a distributed monolith.
 
-Events flip this. Instead of "call this service," you declare "this thing happened." Consumers decide what to do. The four pillars of a solid EDA:
+At Findep, credit scoring, disbursement, collections, and fraud detection all needed to react to loan application state changes. Wiring those together with REST calls would have created a dependency graph that made deployments a coordination nightmare. Events let each team own their reaction to what happened, without being coupled to the service that produced it.
+
+Events flip the dependency model. Instead of "call this service," you declare "this thing happened." Consumers decide what to do. The four pillars of a solid EDA:
 
 - **Decoupling** — services communicate only through events, eliminating direct dependencies
 - **Scalability** — async processing allows horizontal scaling on demand
@@ -29,9 +31,23 @@ Let's get into the patterns.
 
 ## Pattern 1: Event Sourcing
 
-Event Sourcing stores the *state changes* of an entity as an append-only sequence of events, rather than the current state. Your database is a log. You reconstruct current state by replaying that log.
+In a traditional account system you store the current balance — that's it. If a regulator asks "how did this account get to this balance?" you reconstruct it from logs, audit tables, or whatever your team remembered to add. Event Sourcing makes that reconstruction the primary model. You store the sequence of things that happened, and current state is always derived by replaying them.
 
-This is powerful for audit-heavy domains (finance, compliance, healthcare) because you get a built-in, tamper-evident history of every mutation.
+```
+TRADITIONAL:              EVENT SOURCING:
+┌──────────────┐          ┌──────────────────────────────────────┐
+│   Account    │          │  Event Log (append-only)             │
+│  ──────────  │          │  ────────────────────────────────    │
+│  balance:    │          │  1. AccountOpened      (+$0)         │
+│  $1,200      │          │  2. DepositMade        (+$1,500)     │
+└──────────────┘          │  3. WithdrawalMade     (-$300)       │
+  No history              │  → Replay = $1,200                   │
+                          └──────────────────────────────────────┘
+```
+
+This matters in regulated financial environments because the log is the truth — not a side effect of it. You get tamper-evident history, the ability to replay to any point in time, and a foundation for the CQRS pattern below.
+
+The base event and aggregate classes are deliberately thin. The aggregate collects uncommitted events before they're persisted so you can unit test domain logic without touching a database:
 
 ```java
 // Base class for all domain events
@@ -90,7 +106,7 @@ public class Account extends Aggregate {
 }
 ```
 
-The `EventStore` interface is deliberately simple:
+The `EventStore` interface is deliberately simple. Behind it you can use PostgreSQL with an `events` table, EventStoreDB, or any append-only store. The interface hides that choice from the domain:
 
 ```java
 public interface EventStore {
@@ -99,7 +115,7 @@ public interface EventStore {
 }
 ```
 
-**When to use it:** When you need a full audit trail, when "undo" is a business requirement, or when rebuilding state from scratch needs to be possible (e.g., regulatory replay requests).
+**When to use it:** When you need a full audit trail, when "undo" is a business requirement, or when rebuilding state from scratch needs to be possible (e.g., regulatory replay requests). At Círculo de Crédito, credit bureau data has strict retention and traceability requirements — this pattern fits naturally.
 
 **When to avoid it:** For simple CRUD entities where history has no business value. Event Sourcing adds operational complexity — snapshots, schema evolution, projection rebuilds. Don't use it everywhere.
 
@@ -107,7 +123,27 @@ public interface EventStore {
 
 ## Pattern 2: Pub/Sub with Kafka
 
-Pub/Sub is the workhorse of EDA. A producer publishes to a Kafka topic. Multiple consumer groups subscribe independently, each getting a full copy of every message.
+Once a loan application changes state at Findep — approved, disbursed, defaulted — seven different downstream systems need to know: collections, fraud, reporting, customer notifications, the scoring model, the ledger, the CRM. You cannot afford to call all of them synchronously from the originating service. One slow consumer stalls the whole operation.
+
+Pub/Sub decouples that fan-out. The producer publishes one event; each consumer group receives it independently, processes at its own pace, and fails without affecting the others.
+
+```
+                  ┌─────────────────────────────────────────────┐
+                  │              Kafka Topic                     │
+  ┌───────────┐   │  account-events                             │
+  │  Account  │──▶│  ─────────────────────────────────────────  │
+  │  Service  │   │  [AccountOpened] [DepositMade] [Withdrawn]  │
+  └───────────┘   └──────────┬──────────────┬───────────────────┘
+                             │              │
+              ┌──────────────┘              └──────────────────┐
+              ▼                                                 ▼
+  ┌──────────────────────┐                       ┌─────────────────────────┐
+  │  notification-svc    │                       │  fraud-detection-svc    │
+  │  (consumer group A)  │                       │  (consumer group B)     │
+  └──────────────────────┘                       └─────────────────────────┘
+```
+
+The publisher abstracts Kafka behind a clean interface so the domain code doesn't have to know how events are transported:
 
 ```java
 // Publisher — abstracts Kafka behind a clean interface
@@ -160,13 +196,39 @@ spring:
           contentType: application/json
 ```
 
-**Key production consideration:** consumer groups are your scaling unit. Each group gets every message independently. Within a group, Kafka distributes partitions across instances. Design your partition key carefully — it determines ordering guarantees.
+**Key production consideration:** consumer groups are your scaling unit. Each group gets every message independently. Within a group, Kafka distributes partitions across instances. Design your partition key carefully — it determines ordering guarantees. For financial transactions, partition by account ID so all events for the same account are processed in order by the same consumer instance.
 
 ---
 
 ## Pattern 3: CQRS
 
-CQRS separates the write path (commands) from the read path (queries). Writes go through aggregates and event sourcing; reads come from denormalized projections optimized for query patterns.
+In a high-volume lending system, the write path and the read path have fundamentally different shapes. Writing a loan application event is a narrow operation: validate, append, publish. Querying the loan portfolio for a collections dashboard is the opposite: aggregates, joins, filters across millions of records. If both go through the same model, you end up optimizing for neither.
+
+CQRS separates them entirely. Commands mutate state and produce events. Queries read from projections — denormalized read models built specifically for the query pattern they serve.
+
+```
+  WRITE SIDE                              READ SIDE
+  ─────────────────────────────           ─────────────────────────────
+  Command                                 Query
+     │                                       │
+     ▼                                       ▼
+  Command Handler                         Read Model (projection)
+     │                                    (denormalized, query-optimized)
+     ▼
+  Aggregate → DomainEvent
+     │
+     ├──▶ EventStore (append)
+     │
+     └──▶ EventPublisher
+               │
+               ▼
+           Kafka topic
+               │
+               ▼
+         Projection updater ──▶ Read Model
+```
+
+The write side produces events and never queries. The read side listens for events and updates its own store. They never share a database table:
 
 ```java
 // Command — a request to change state
@@ -227,15 +289,17 @@ public class TransactionReadModel {
 }
 ```
 
-**The real benefit:** multiple read models for the same event stream, each optimized for a different use case — fast lookup, search index, reporting aggregate. None of them affect the write path.
+**The real benefit:** multiple read models for the same event stream, each optimized for a different use case — fast single-record lookup, a search index, a reporting aggregate, a collections queue. None of them affect the write path. At Findep, we had the same transaction event stream feeding separate projections for operations, finance, and regulatory reporting — each one shaped for its consumer.
 
 ---
 
 ## Pattern 4: Secure Event Design
 
-In regulated industries, events aren't just data — they're evidence. Security at the event layer is non-negotiable.
+In regulated industries, events aren't just data — they're evidence. At a credit bureau, an event saying a credit inquiry was made is legally significant. At a lending company, a disbursement event triggers downstream obligations. If those events can be forged, replayed out of order, or read by an unauthorized service, you have a compliance problem that no amount of application-layer access control will fix.
 
-**Event signing** — every published event carries a cryptographic signature. Consumers verify it before processing:
+Security belongs at the event layer, not above it.
+
+**Event signing** ensures that any consumer can verify an event was produced by a legitimate service and hasn't been tampered with in transit. The signature travels with the event:
 
 ```java
 @Component
@@ -253,7 +317,7 @@ public class AuthenticatedEventPublisher implements EventPublisher {
 }
 ```
 
-**Envelope encryption** — for PII or sensitive financial data, encrypt the payload before publishing. Even if someone gains read access to the broker, the payload is useless without the decryption key:
+**Envelope encryption** protects the payload contents. Even if an attacker gains read access to the Kafka broker — which is a realistic threat model for multi-tenant or cloud-hosted clusters — they cannot read customer data without the decryption key. PII fields in financial events (RFC, CURP, account numbers) should always be encrypted before they leave the originating service:
 
 ```java
 @Component
@@ -279,7 +343,7 @@ public class EncryptedEventPublisher implements EventPublisher {
 
 ## The Event Schema Contract
 
-Across all patterns, follow the [CloudEvents spec](https://cloudevents.io/) for a consistent envelope:
+Across all patterns, follow the [CloudEvents spec](https://cloudevents.io/) for a consistent envelope. Every event in the system should look like this:
 
 ```json
 {
@@ -292,7 +356,7 @@ Across all patterns, follow the [CloudEvents spec](https://cloudevents.io/) for 
   "data": {
     "accountId": "acc-123",
     "ownerId": "user-456",
-    "currency": "USD",
+    "currency": "MXN",
     "metadata": {
       "version": "1.0",
       "correlationId": "corr-789",
@@ -310,18 +374,20 @@ Five rules I enforce in every production system:
 4. **Idempotent consumers** — design every handler to be safely re-entrant
 5. **Dead letter queues** — every consumer needs a DLQ and a retry policy
 
+The idempotency rule is especially important in financial systems. At Findep, a disbursement event being processed twice is not a logging problem — it's a money problem. Every consumer that touches money or credit state needs to track which event IDs it has already processed.
+
 ---
 
 ## Putting It All Together
 
 These four patterns aren't mutually exclusive. A production financial-grade system uses all of them:
 
-- **Event Sourcing** as the write-side persistence for core aggregates
-- **Pub/Sub via Kafka** to fan out to downstream services
-- **CQRS** to maintain multiple read-optimized projections
+- **Event Sourcing** as the write-side persistence for core aggregates (accounts, loans, payments)
+- **Pub/Sub via Kafka** to fan out to downstream services (fraud, collections, notifications, reporting)
+- **CQRS** to maintain multiple read-optimized projections without touching the write path
 - **Secure event design** as a cross-cutting concern on every publish/consume path
 
-The result is a system that is auditable by design, independently scalable at each consumer, resilient to partial failures, and explainable to compliance teams.
+The result is a system that is auditable by design, independently scalable at each consumer, resilient to partial failures, and explainable to compliance teams when they come asking.
 
 ---
 

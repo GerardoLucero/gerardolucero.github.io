@@ -6,11 +6,55 @@ tags: ["observability", "kafka", "distributed-systems", "slo", "dynatrace", "gra
 draft: false
 ---
 
-There's a particular failure mode I've seen across multiple event-driven systems: the monitoring is extensive but the observability is poor. You have dashboards. You have alerts. You have hundreds of metrics. And yet, when something goes wrong, you spend forty minutes in the logs trying to reconstruct what actually happened.
+At Círculo de Crédito, I led the implementation of Dynatrace observability across a distributed credit bureau platform — defining SLOs and SLIs, configuring distributed tracing across microservices, and building dashboards that connected infrastructure signals to business outcomes. Before that, at Petco, I worked with Grafana and Prometheus to instrument event pipelines handling catalog and inventory events. In both cases, the hardest lessons didn't come from building the observability — they came from the incidents before it was complete.
 
-The problem is usually not missing data — it's unmeaningful data. Metrics that tell you infrastructure utilization but not business impact. Logs that tell you an exception was thrown but not which user, which transaction, and which downstream effect it had. Traces that stop at the service boundary instead of following the event through the entire pipeline.
+I remember one incident at Círculo where a consumer started silently falling behind. No error. No exception. Just lag accumulating slowly in a topic that fed downstream credit report generation. By the time we noticed — because a business metric dropped — the queue had grown to tens of thousands of messages. The root cause investigation took the better part of a day because the logs had no correlation IDs and traces stopped at the Kafka `send()` call. The event had effectively disappeared into the broker.
 
-This post is about building observability for event-driven systems that answers the questions that actually matter during an incident — and during the quiet periods when you're trying to understand if your system is healthy.
+That incident, and others like it, shaped how I think about observability for event-driven systems. This post is about building it in ways that answer the questions that actually matter — during an incident and during the quiet periods when you're trying to understand if your system is healthy.
+
+---
+
+## Observability vs. Monitoring
+
+Before going further, one distinction worth naming because most teams conflate them:
+
+**Monitoring** tells you when something is wrong — it's alert-based, threshold-driven, and answers "is X above or below Y?"
+
+**Observability** lets you understand *why* something is wrong — it's exploration-based, correlation-driven, and answers "what actually happened, and where?"
+
+You need both. But monitoring without observability means you know there's a fire and have no idea where it started.
+
+---
+
+## How the Three Pillars Connect
+
+In an event-driven system, logs, metrics, and traces don't operate independently — they need to be correlated across the entire event pipeline. Here's how they fit together:
+
+```
+OBSERVABILITY IN EVENT-DRIVEN SYSTEMS
+══════════════════════════════════════
+
+Producer Service                Kafka Broker                Consumer Service
+─────────────────               ──────────────              ─────────────────
+Span: process-order             Topic: order-events         Span: process-payment
+  correlationId: abc                  │                       correlationId: abc
+  traceId: xyz          ─────────────►│─────────────────────► traceId: xyz
+       │                              │                             │
+  Metric: orders.created         Metric: lag                  Metric: payments.success
+  Log: {"event":"ORDER_CREATED"}  Metric: throughput         Log: {"event":"PAYMENT_DONE"}
+       │                              │                             │
+       └──────────────────────────────┴─────────────────────────────┘
+                                      │
+                              Grafana/Dynatrace
+                         ─────────────────────────
+                         │ Dashboard:              │
+                         │ - Business: orders/min  │
+                         │ - SLO: lag < 1000       │
+                         │ - Trace: end-to-end     │
+                         └─────────────────────────┘
+```
+
+The broker is not a black box — it's an observable node. Consumer lag and throughput metrics from the broker, combined with traces that cross service boundaries and logs that carry shared IDs, are what make the complete picture possible.
 
 ---
 
@@ -39,12 +83,19 @@ public class StructuredLogger {
             .level("INFO")
             .event("EVENT_PUBLISHED")
             .eventType(eventType)
-            .eventId(eventId)
+            .eventId(eventId)           // Identifies THIS specific event — used for deduplication
+                                        // and idempotency checks on the consumer side
             .aggregateId(aggregateId)
             .service(getServiceName())
-            .traceId(MDC.get("traceId"))
+            .traceId(MDC.get("traceId"))           // Links all spans in the distributed trace —
+                                                    // lets you reconstruct the full call graph
+                                                    // in Jaeger, Zipkin, or Dynatrace
             .spanId(MDC.get("spanId"))
-            .correlationId(MDC.get("correlationId"))
+            .correlationId(MDC.get("correlationId")) // Business-level correlation — links events
+                                                      // that belong to the same user session,
+                                                      // order, or transaction across services.
+                                                      // Survives trace boundaries (e.g., async
+                                                      // callbacks, scheduled retries)
             .context(context)
             .build();
 
@@ -58,11 +109,15 @@ public class StructuredLogger {
             .level("INFO")
             .event("EVENT_CONSUMED")
             .eventType(eventType)
-            .eventId(eventId)
+            .eventId(eventId)           // Match this to the producer log to confirm delivery
             .consumerGroup(consumerGroup)
             .processingDurationMs(processingTime.toMillis())
-            .traceId(MDC.get("traceId"))
-            .correlationId(MDC.get("correlationId"))
+            .traceId(MDC.get("traceId"))           // Same traceId as producer — this is what
+                                                    // stitches producer and consumer spans into
+                                                    // a single end-to-end trace
+            .correlationId(MDC.get("correlationId")) // Business correlation — query by this
+                                                      // to answer "what else happened during
+                                                      // this user's checkout flow?"
             .build();
 
         logger.info(JsonUtils.toJson(logEntry));
@@ -70,7 +125,7 @@ public class StructuredLogger {
 }
 ```
 
-The critical fields are `traceId`, `correlationId`, and `eventId`. With these three, you can reconstruct the complete journey of any event across any number of services.
+The critical fields are `traceId`, `correlationId`, and `eventId` — and they serve distinct purposes. `eventId` is about the event itself: idempotency, deduplication, delivery confirmation. `traceId` is about the distributed trace: what spans belong together in the observability tool. `correlationId` is about the business transaction: what logical flow does this event belong to, even across asynchronous gaps or retries that break trace continuity. You need all three.
 
 ### Business Metrics vs. Technical Metrics
 
@@ -86,6 +141,7 @@ public class BusinessMetrics {
 
     public BusinessMetrics(MeterRegistry meterRegistry) {
         // Business metrics — these answer "is our system delivering value?"
+        // Use these first during an incident to understand scope and customer impact
         this.orderCreations = Counter.builder("business.orders.created.total")
             .description("Total orders created")
             .register(meterRegistry);
@@ -99,6 +155,7 @@ public class BusinessMetrics {
             .register(meterRegistry);
 
         // Technical metrics — these answer "is our infrastructure healthy?"
+        // Use these second during an incident to pinpoint the root cause
         this.orderProcessingTime = Timer.builder("tech.order.processing.duration")
             .description("End-to-end order processing time")
             .register(meterRegistry);
@@ -164,7 +221,9 @@ public class OrderService {
             span.tag("order.total", String.valueOf(order.getTotal()));
             span.tag("order.status", order.getStatus());
 
-            // Propagate trace context in the event header
+            // Inject the current trace context into the event headers.
+            // This is what allows the consumer to create a child span and continue
+            // the same distributed trace — without this, the trace breaks at the broker.
             Map<String, String> traceHeaders = new HashMap<>();
             tracer.inject(span.context(), Format.Builtin.TEXT_MAP,
                 new TextMapAdapter(traceHeaders));
@@ -191,7 +250,9 @@ public class PaymentEventConsumer {
 
     @KafkaListener(topics = "order-events")
     public void handleOrderCreated(ConsumerRecord<String, OrderCreatedEvent> record) {
-        // Extract trace context from headers
+        // Extract trace context from headers — this makes the consumer span a child
+        // of the producer span, resulting in a single end-to-end trace that crosses
+        // the Kafka boundary. Without this, Jaeger/Dynatrace shows two disconnected traces.
         Map<String, String> headers = extractHeaders(record);
         SpanContext parentContext = tracer.extract(Format.Builtin.TEXT_MAP,
             new TextMapAdapter(headers));
@@ -210,7 +271,7 @@ public class PaymentEventConsumer {
 }
 ```
 
-Now your trace view in Jaeger or Zipkin shows the complete journey: HTTP request → order service → Kafka topic → payment service. You can see exactly where time was spent and where failures occurred.
+Now your trace view in Jaeger, Zipkin, or Dynatrace shows the complete journey: HTTP request → order service → Kafka topic → payment service. You can see exactly where time was spent and where failures occurred.
 
 ---
 
@@ -273,7 +334,7 @@ public class EventDrivenSLOMonitor {
 }
 ```
 
-The latency SLO is particularly interesting: different consumer groups have different latency requirements. Payment processing has a tighter SLO than analytics aggregation. Define these explicitly and alert differently based on the consumer's SLO class.
+The latency SLO is particularly interesting: different consumer groups have different latency requirements, and this should be made explicit rather than assumed. Payment processing has a tighter SLO than analytics aggregation — but so does fraud detection vs. reporting, or inventory reservation vs. audit logging. Define SLO classes per consumer type: real-time consumers (payments, fraud, inventory) typically need sub-second P95 latency and lag alerts in the hundreds; near-real-time consumers (notifications, search indexing) can tolerate a few seconds and lag in the low thousands; batch consumers (analytics, reporting, compliance) may have no meaningful lag SLO at all, only an availability SLO over a daily window. Alert thresholds, on-call routing, and error budgets should all differ by class.
 
 ---
 
@@ -313,15 +374,37 @@ Set the lag alert threshold based on your latency SLO. If your SLO requires P95 
 
 ---
 
+## What I'd Alert On First
+
+If you're starting from scratch, don't try to instrument everything at once. These are the five alerts I'd stand up first, in priority order:
+
+1. **Consumer group lag > threshold (by SLO class)** — catches the most common failure mode silently accumulating before anyone notices in the UI. A stopped consumer with zero errors is otherwise invisible.
+
+2. **Business success rate drop** — e.g., `business.payments.success.total` rate drops more than 10% below baseline. This is your customer-impact signal. It fires when something is actually broken for users, not just when infrastructure is stressed.
+
+3. **Dead letter topic (DLQ) message count increasing** — events landing in DLQ means your system is swallowing failures. A growing DLQ is a slow disaster that teams often discover too late.
+
+4. **Producer throughput deviation** — a sudden spike or sudden drop in `business.orders.created.total` rate often signals either a runaway publisher or a broken upstream integration. Both look like normal operation without this alert.
+
+5. **End-to-end event processing P95 latency breach** — once traces are instrumented, alert on the full producer-to-consumer latency, not just consumer-side processing time. This catches broker slowdowns, partition rebalancing, and network issues that are invisible to individual service metrics.
+
+Add infrastructure alerts (CPU, memory, GC pause) after these. They're useful for root cause investigation but not for detecting that something is actually wrong for users.
+
+---
+
 ## The Incident Playbook
 
 When an alert fires for an event-driven system, the investigation follows a specific path:
 
-1. **Check consumer group lag** — is a consumer falling behind or stopped?
-2. **Check business metrics** — what's the impact? Are orders failing? Are payments not processing?
-3. **Check producer throughput** — did publishing spike unexpectedly?
-4. **Follow the trace** — find a failing event by ID and trace it through the pipeline
-5. **Check dead letter topics** — are events accumulating there?
+1. **Check consumer group lag** — is a consumer falling behind or stopped? A lag that's growing linearly suggests a slow consumer or a throughput spike. A lag that's flat and high suggests the consumer stopped entirely — check if the pod is running and if there are rebalancing events in the broker logs.
+
+2. **Check business metrics** — what's the impact? Are orders failing? Are payments not processing? A lag spike in a notification topic may be acceptable for minutes; the same spike in a payment topic means active revenue impact. The business metrics tell you how urgent the response needs to be.
+
+3. **Check producer throughput** — did publishing spike unexpectedly? Compare current `events.published` rate against the rolling baseline. A 10x spike often means a retry loop, a batch job that ran early, or an upstream system recovering from its own outage and replaying.
+
+4. **Follow the trace** — find a failing event by `eventId` or `correlationId` in your log search, then use the `traceId` to pull the full distributed trace in Dynatrace or Jaeger. This shows exactly which span failed, what the error was, and how long each stage took. Without traces propagated across the event boundary, this step becomes manual log archaeology.
+
+5. **Check dead letter topics** — are events accumulating there? DLQ messages include the original event and (if your consumer is instrumented correctly) the exception that caused the failure. Often you'll find a schema mismatch, a null field, or a downstream dependency that's returning 500s for a specific event type.
 
 This is why the instrumentation matters: each step requires specific data. Without business metrics, you can't answer step 2. Without distributed traces, you can't do step 4. Without DLQ monitoring, you miss step 5 entirely.
 

@@ -6,21 +6,70 @@ tags: ["kafka", "kafka-streams", "java", "real-time", "stream-processing"]
 draft: false
 ---
 
-Most Kafka tutorials show you how to produce and consume messages. That's table stakes. The interesting work starts when you need to compute rolling metrics over live data, join streams from different domains, or maintain stateful aggregations that survive restarts.
+I attended Kafka Summit London 2023, and what stood out most wasn't the keynotes — it was the realization that most teams using Kafka were still writing raw consumer loops when they should have been using Kafka Streams. The conversations in the hallways confirmed it: people were reinventing stateful aggregations, managing offset commits by hand, and building fragile exactly-once logic from scratch.
 
-This post is a complete walkthrough of a production-grade Kafka Streams pipeline. We'll build an archetype that covers the four capabilities you'll need in any serious real-time analytics system: stream processing with windowed aggregations, stateful session tracking, stream-to-stream joins, and proper exactly-once configuration. All of this in Java with Spring Boot.
+That context stuck with me. At Grupo Findep, I worked on systems processing 200 million transactions and 400,000 monthly loan applications. The volume forces you to think carefully about what happens at the boundary between ingestion and processing — where you need real-time guarantees, not just throughput. At Círculo de Crédito, batch systems processed 1 million records in under 3 minutes using AWS Glue and RDS. Batch works until it doesn't: when you need to react to an event within seconds, not hours, the architecture has to change.
+
+This post is the archetype I wish I'd had: a complete, production-oriented Kafka Streams pipeline in Java with Spring Boot, covering the four patterns that appear in every real analytics system.
 
 ---
 
-## Why Kafka Streams Over a Separate Processing Engine?
+## Kafka Streams vs. a Consumer Loop
 
-Before the code: why Kafka Streams instead of Flink, Spark Streaming, or a custom consumer loop?
+Before the architecture: it's worth understanding what Kafka Streams actually buys you over writing a consumer yourself.
 
-**Operational simplicity.** Kafka Streams is a library — it runs inside your Spring Boot application, not in a separate cluster. No separate infrastructure to provision, monitor, or scale.
+```
+Simple Consumer Loop:
 
-**State stores.** Kafka Streams provides RocksDB-backed state stores that are automatically backed up to Kafka changelog topics. Your application can restart and recover its state without reprocessing the entire history.
+  Kafka ──► poll() ──► process() ──► commit offset
+               │
+               └─ You manage: state, failures, exactly-once,
+                  windowing, joins, recovery after restart
 
-**Exactly-once semantics.** With `EXACTLY_ONCE_V2`, Kafka Streams guarantees that each input record is processed exactly once, even across failures. This matters enormously for financial metrics and billing systems.
+
+Kafka Streams:
+
+  Kafka ──► Topology ──► State Stores (RocksDB) ──► Output Topics
+               │               │
+               │         Changelog topics
+               │         (automatic state backup)
+               │
+               └─ Framework manages: windowing, joins, exactly-once,
+                  rebalancing, state recovery, interactive queries
+```
+
+A consumer loop is the right tool when you need simple, stateless processing: read a message, call an API, write a result. The moment you need to aggregate across time windows, join two streams, or maintain state that survives a restart, a consumer loop becomes a framework you're building yourself — poorly.
+
+Kafka Streams handles all of that. It runs as a library inside your Spring Boot application, with no separate cluster to manage.
+
+---
+
+## Pipeline Architecture
+
+Here's the full topology we're building before any code:
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │         Kafka Streams Topology          │
+                    │                                         │
+user-events ───────►│ UserMetricsProcessor                    │
+                    │   └─ WindowedAggregation(5min)          │──► user-metrics
+                    │   └─ SessionAggregation                 │
+                    │                                         │
+order-events ──────►│ OrderAnalyticsProcessor                 │──► order-analytics
+                    │   └─ HourlyAggregation                  │
+                    │                                         │
+user-events ───┐    │ StreamJoinProcessor                     │
+order-events ──┴───►│   └─ Join(5min window, by userId)       │──► enriched-events
+                    │                                         │
+                    │  State Stores (RocksDB):                │
+                    │  ├─ user-login-counts (windowed)        │
+                    │  ├─ user-sessions (KV)                  │
+                    │  └─ hourly-order-analytics (windowed)   │
+                    └─────────────────────────────────────────┘
+```
+
+Each state store is backed by a changelog topic in Kafka. If the application crashes, it replays from the changelog and reconstructs in-memory state automatically. With `EXACTLY_ONCE_V2`, offset commits and state store updates happen atomically — no double-counting, no lost events.
 
 ---
 
@@ -61,6 +110,8 @@ Three things worth noting here: `NUM_STREAM_THREADS_CONFIG` controls parallelism
 ---
 
 ## Pattern 1: Windowed Aggregations for Real-Time Metrics
+
+**Business problem:** In a high-volume system — say, a platform processing hundreds of thousands of loan applications per month — you need to detect anomalous activity in near real-time. How many times has a user logged in during the last 5 minutes? A spike in login attempts might indicate a fraud pattern or an automated submission bot. You can't answer that question with batch jobs; you need a rolling window over live data.
 
 The most common use case: count or sum events within rolling time windows. Here we compute login counts in 5-minute sliding windows with 1-minute advancement:
 
@@ -110,6 +161,8 @@ The `Materialized` parameter names the state store (`"user-login-counts"`), whic
 ---
 
 ## Pattern 2: Stateful Session Aggregation
+
+**Business problem:** In a loan processing system, you need to detect when a user submits multiple applications within the same session — this requires stateful session tracking. A session starts on login and ends on logout. You need to know the duration, what happened in between, and be able to reconstruct this state after a service restart without reprocessing the entire event history from scratch.
 
 Sometimes you need to track state across multiple events for the same entity. Here we compute session duration by correlating login and logout events:
 
@@ -161,7 +214,7 @@ The `aggregate` operator maintains the `UserSession` state store across restarts
 
 ## Pattern 3: Hourly Business Analytics
 
-For business dashboards, hourly aggregations are usually the right granularity — detailed enough to spot trends, coarse enough to stay manageable:
+**Business problem:** Operations and finance teams need to monitor business health throughout the day — order volume, revenue, average ticket. At a consumer lending company, the ops team needs to know by 10am if application volumes are tracking toward monthly targets. Hourly aggregations are usually the right granularity for this: detailed enough to spot intraday trends, coarse enough to stay readable.
 
 ```java
 @Component
@@ -210,7 +263,9 @@ public class OrderAnalyticsProcessor {
 
 ## Pattern 4: Stream-to-Stream Joins
 
-The most powerful capability in Kafka Streams: joining two live streams within a time window. This lets you enrich events with context from another domain — for example, correlating user behavior with order events to build a unified activity timeline.
+**Business problem:** You have user behavior events (logins, profile updates, application starts) on one topic, and order/transaction events on another. To build a unified activity timeline — or to detect that a user placed an order within minutes of logging in for the first time — you need to correlate these two streams in real time. Doing this after the fact with a database join introduces latency and misses the moment; doing it in the stream lets you react immediately.
+
+The most powerful capability in Kafka Streams: joining two live streams within a time window. This lets you enrich events with context from another domain.
 
 ```java
 @Component
@@ -253,26 +308,6 @@ public class StreamJoinProcessor {
 ```
 
 **Critical detail:** Both streams must be co-partitioned — same number of partitions, same partitioning strategy — for the join to work correctly. Kafka Streams will throw a `TopologyException` if you try to join streams that aren't co-partitioned. The `selectKey` calls above ensure both streams are keyed by `userId` before the join.
-
----
-
-## The Architecture at Scale
-
-Here's the complete topology for this pipeline:
-
-```
-Input Topics:         Processing:              Output Topics:
-user-events    ──────► UserMetricsProcessor ──► user-metrics
-order-events   ──────► OrderAnalyticsProcessor ► order-analytics
-payment-events ──────► StreamJoinProcessor  ──► enriched-events
-                              │
-                        State Stores:
-                        - user-login-counts (windowed)
-                        - user-sessions (KV)
-                        - hourly-order-analytics (windowed)
-```
-
-Each state store is backed by a changelog topic in Kafka. When a stream thread fails and recovers, it restores state from the changelog. With `EXACTLY_ONCE_V2`, the offset commits and state store updates happen atomically — no double-counting, no lost events.
 
 ---
 

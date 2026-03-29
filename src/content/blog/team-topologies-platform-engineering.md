@@ -6,6 +6,16 @@ tags: ["platform-engineering", "team-topologies", "devex", "architecture", "lead
 draft: false
 ---
 
+I've spent years watching Conway's Law operate in real systems — from the inside, not from a textbook.
+
+At Círculo de Crédito, I ran the Architecture Squad: a small team whose job was to enable seven or more engineering squads without becoming a bottleneck for any of them. We also built an Internal Developer Platform on Kubernetes with golden paths for deployment, observability, and secret management. That work put me in direct contact with every tension Team Topologies describes — who owns what, how teams coordinate, what the platform should and shouldn't decide for you.
+
+At Petco, I coordinated across three different teams to deliver platform and architecture capabilities. Different company, same underlying dynamics: team structure shapes the architecture whether you intend it to or not.
+
+This is my attempt to synthesize what I've observed and learned. Team Topologies gave me a language for things I had already lived. What follows is that framework, grounded in practice.
+
+---
+
 In 1967, computer scientist Melvin Conway published an observation that turned out to be one of the most durable laws in software engineering: organizations that design systems are constrained to produce designs that are copies of their communication structures.
 
 This has been validated over and over in production. When you look at the architecture of a large software system and then look at the org chart of the company that built it, they look the same. If your three backend teams each own a part of the monolith and all share a database, your architecture will have three tightly coupled modules sharing a database. If your frontend team is entirely separate from your backend teams, your APIs will be poorly designed for the UIs they serve.
@@ -26,9 +36,38 @@ Team Topologies, the framework by Matthew Skelton and Manuel Pais, addresses thi
 
 ---
 
-## The Four Team Types
+## Visual Overview: The Four Team Types
 
-Team Topologies defines four types of teams, each with a specific purpose and interaction model.
+Before diving into each type, here is the full picture. The arrows are key — they show what flows between teams and in which direction.
+
+```
+TEAM TOPOLOGIES — FOUR TYPES
+════════════════════════════
+
+                    ┌──────────────────────────────────────────┐
+                    │           Platform Team                   │
+                    │  (builds the golden paths and IDP)        │
+                    └───────────────┬──────────────────────────┘
+                        provides    │     provides
+                    ┌───────────────┘──────────────────┐
+                    │                                  │
+         ┌──────────▼───────────┐           ┌──────────▼───────────┐
+         │  Stream-Aligned Team  │           │  Stream-Aligned Team  │
+         │  (Checkout Flow)      │           │  (User Onboarding)    │
+         └──────────────────────┘           └──────────────────────┘
+                    ▲                                  ▲
+                    │ enables                          │ enables
+         ┌──────────┴───────────┐           ┌──────────┴───────────┐
+         │  Enabling Team        │           │  Complicated Subsystem│
+         │  (Architecture Guild) │           │  (Risk Engine)        │
+         └──────────────────────┘           └──────────────────────┘
+```
+
+The Platform team is not a support team — it is a product team whose customers are internal engineers. The Enabling team is temporary by design: it closes a capability gap and steps back. The Complicated Subsystem team hides deep expertise behind a simple interface. Stream-Aligned teams are the units that actually deliver value to users.
+
+---
+
+## The Four Team Types
 
 ### Stream-Aligned Teams: The Value Delivery Units
 
@@ -52,6 +91,8 @@ The defining characteristic is outcome ownership, not technology ownership. A st
 
 ```java
 // This team owns everything needed to deliver the checkout flow
+// NOTE: @TeamOwnership and similar annotations below are illustrative —
+// they don't exist in a real Java framework. They represent a design intent.
 @Service
 @TeamOwnership("checkout-team") // 7 people, cross-functional
 public class CheckoutService {
@@ -70,8 +111,11 @@ Enabling teams don't build features. They help stream-aligned teams build featur
 
 A critical distinction: an enabling team doesn't do the work *for* the stream team. It teaches the stream team to do the work themselves. When an enabling team's engagement becomes permanent — when stream teams can't operate without them — it has become a bottleneck, not an enabler.
 
+At Círculo, the Architecture Squad operated this way by design. We'd engage with a squad for four to six weeks — helping them define service boundaries, set up their deployment pipeline, or adopt a pattern — and then we'd leave. The goal was always that the squad could run independently when we were done. The hardest part of that model is resisting the pull to keep helping. When you're the experts, the temptation to stay involved is real.
+
 ```java
 // Enabling team: Platform Architecture Guild
+// @EnablementService is illustrative — represents the team's operating mode
 @EnablementService
 public class PlatformEnablingService {
 
@@ -100,6 +144,7 @@ The key design principle: complicated subsystem teams expose a simple API to str
 
 ```java
 // The complicated subsystem is complex internally
+// @ComplexSubsystem is illustrative — represents team ownership of a deep domain
 @ComplexSubsystem
 @TeamOwnership("risk-engineering-team")
 public class RiskCalculationEngine {
@@ -162,18 +207,36 @@ Platform Services:
 
 ---
 
+## Interaction Modes: The Part Most People Miss
+
+Team types describe *what* a team does. Interaction modes describe *how* teams work together. This distinction is where most implementations of Team Topologies break down — people define team types and stop there, never specifying how teams are supposed to coordinate.
+
+Team Topologies defines three interaction modes:
+
+| Mode | What it means | When to use it | Common mistake |
+|---|---|---|---|
+| **Collaboration** | Two teams work closely together, sharing code and decisions | Short, intensive periods — spiking on a new domain, cross-team prototyping | Treating collaboration as permanent. When it doesn't end, both teams slow down. |
+| **X-as-a-Service** | One team consumes what another provides via a stable API, with minimal coordination | When the interface is well-defined and stable — platform → stream-aligned | Building X-as-a-Service before the contract is stable. High churn in the API creates hidden coupling. |
+| **Facilitating** | One team helps another grow a capability, then steps back | Enabling team engaging with a stream-aligned team | The facilitating team never leaves. Enabling becomes dependency. |
+
+The progression matters: teams often start in Collaboration mode while working out the right interface, then shift to X-as-a-Service once the contract stabilizes. Staying in Collaboration too long is the most common failure — it feels productive, but it means both teams are blocked on each other's schedules.
+
+At Círculo, the Architecture Squad operated primarily in Facilitating mode. When we were introducing a new practice (say, distributed tracing or service mesh configuration), we'd briefly enter Collaboration mode with a squad to prototype together. Once patterns were established, we'd document the golden path and move to X-as-a-Service: squads consume the platform, we maintain it.
+
+---
+
 ## Conway's Law as a Design Tool: The Inverse
 
 Once you understand the four team types, you can apply Conway's Law intentionally. If you want a modular, independently deployable architecture, design your team structure to match.
 
 **Desired architecture → Team structure that produces it:**
 
-| Architecture Goal | Team Design |
-|---|---|
-| Independent deployment per domain | One stream-aligned team per domain |
-| Shared security standards | Enabling team for security practices |
-| Consistent observability | Platform team owning the observability stack |
-| High-complexity domain separation | Complicated subsystem team for that domain |
+| Architecture Goal | Team Design | Common Mistake |
+|---|---|---|
+| Independent deployment per domain | One stream-aligned team per domain | One team owning multiple unrelated services — they'll develop shared deploy schedules and hidden coupling |
+| Shared security standards | Enabling team for security practices | Putting security inside a platform team — platform enforces, but doesn't teach; teams route around it |
+| Consistent observability | Platform team owning the observability stack | Making observability opt-in — adoption stays low, gaps appear in incident response |
+| High-complexity domain separation | Complicated subsystem team for that domain | Embedding the specialists inside a stream team — they get pulled into feature work and the expertise diffuses |
 
 The converse is also true and worth internalizing: if you have one team responsible for five microservices across three domains, the services will develop hidden dependencies and shared deployment schedules. The organization shape will impose itself on the architecture.
 
@@ -204,27 +267,33 @@ The platform team addresses this by reducing cognitive load for stream teams. If
 
 ## The IDP as Architecture: What Your Platform Reveals
 
-The Internal Developer Platform (IDP) built by your platform team is itself an architectural document. What the platform makes easy, teams will build. What the platform makes hard, teams will avoid or build badly.
+At Círculo de Crédito, we built an IDP that ran on Kubernetes with golden paths for deployment, observability, and secret injection. One of the clearest lessons from that build: the platform is a mirror. What the platform makes easy, teams will build. What the platform makes hard, teams will avoid or build badly — usually both.
 
-If your platform provides a golden path for deploying stateless services but has no path for stateful workloads, you'll have a proliferation of stateless services and a few hand-crafted, inconsistently operated stateful systems.
+When we added auto-instrumented distributed tracing for HTTP services, adoption was immediate. Engineers didn't have to change a line of application code. When the same capability wasn't yet available for Kafka consumers, those services shipped with no trace context and became black boxes during incidents.
 
-If your platform has built-in distributed tracing for HTTP calls but not for Kafka consumers, your event-driven services will have observability gaps.
+The platform team makes architecture decisions whether it intends to or not. Every golden path is an implicit recommendation. Every gap in the golden paths is a place where teams will diverge.
 
 Assess your platform by asking: what does it make the path of least resistance? That's what your architecture will look like in two years.
+
+If your platform provides a golden path for deploying stateless services but has no path for stateful workloads, you'll have a proliferation of stateless services and a few hand-crafted, inconsistently operated stateful systems. If your platform has built-in distributed tracing for HTTP calls but not for Kafka consumers, your event-driven services will have observability gaps.
 
 ---
 
 ## The 5 Dysfunctions That Show Up in Your Architecture
 
-Patrick Lencioni's five dysfunctions of a team — absence of trust, fear of conflict, lack of commitment, avoidance of accountability, inattention to results — manifest directly in architecture:
+Patrick Lencioni's five dysfunctions of a team — absence of trust, fear of conflict, lack of commitment, avoidance of accountability, inattention to results — manifest directly in architecture. I've seen all five in production systems.
 
-- **Absence of trust** produces defensive APIs with excessive validation and no shared contracts
-- **Fear of conflict** produces committee-designed architectures that satisfy no one's constraints well
-- **Lack of commitment** produces systems where no team owns the reliability of the whole
-- **Avoidance of accountability** produces systems where incidents are investigated but never resolved
-- **Inattention to results** produces platforms optimized for engineering metrics (deployments per day) rather than business outcomes (customer satisfaction)
+- **Absence of trust** produces defensive APIs with excessive validation and no shared contracts. Teams don't trust that the other side won't break them, so they duplicate logic, wrap everything in guards, and avoid building on each other's interfaces. The result is code that looks like a wall — heavily fortified at the boundary, underdeveloped on the inside.
 
-The fix is not purely technical. You can add all the architecture review boards you want, but if the teams don't trust each other, the system design will reflect that.
+- **Fear of conflict** produces committee-designed architectures that satisfy no one's constraints well. The most technically controversial decision gets deferred, documented as "TBD," and eventually resolved by whoever builds the first implementation. That implementation becomes the de facto architecture.
+
+- **Lack of commitment** produces systems where no team owns the reliability of the whole. Each team is accountable for their service's uptime, but the end-to-end reliability has no owner. In an incident, this becomes visible immediately: everyone can show that their service was fine; no one knows why the user experience failed.
+
+- **Avoidance of accountability** produces systems where incidents are investigated but never resolved. The post-mortem gets written, the action items get opened, and the same failure happens six months later because no one followed through and no one asked why.
+
+- **Inattention to results** produces platforms optimized for engineering metrics (deployments per day) rather than business outcomes (customer satisfaction). A platform team that measures itself by deployment frequency can achieve that number while stream teams are increasingly frustrated with reliability, documentation, and support.
+
+The fix is not purely technical. You can add all the architecture review boards you want, but if the teams don't trust each other, the system design will reflect that. Building trust between teams — specifically, between the platform team and stream teams — is a prerequisite for the platform operating as described.
 
 ---
 
@@ -236,6 +305,7 @@ If you're looking at your current team structure and architecture and seeing the
 2. **Identify the coupling hotspots.** Which teams need each other to deploy? That coupling is in your architecture too.
 3. **Pick one platform investment.** What one thing could the platform team build that would eliminate a recurring coordination overhead for stream teams?
 4. **Create one golden path.** Not a mandate — a path of least resistance that teams will naturally choose because it's easier than the alternative.
+5. **Define the interaction mode explicitly.** For each team relationship you care about, name it: Collaboration, X-as-a-Service, or Facilitating. If you can't name it, the teams probably can't either.
 
 The architecture you have reflects the organization you have. If you want a different architecture, you need to think seriously about the organization you need.
 
