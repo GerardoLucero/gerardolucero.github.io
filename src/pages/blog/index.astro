@@ -1,0 +1,102 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Blog"
+  description="Technical articles by Gerardo Lucero on distributed systems, cloud architecture, and product engineering."
+>
+  <div class="blog-page">
+    <div class="container">
+
+      <header class="page-header animate-fade-in-up">
+        <h1 class="page-title">Blog</h1>
+        <p class="page-subtitle">
+          Thoughts on distributed systems, cloud architecture, and the craft of building software.
+        </p>
+      </header>
+
+      <div class="blog-empty animate-fade-in-up delay-200">
+        <div class="empty-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+        </div>
+        <h2>Coming soon</h2>
+        <p>I'm working on some articles about distributed systems, Kafka, cloud architecture and engineering leadership. Check back soon.</p>
+        <div class="upcoming-topics">
+          <span class="badge">Event-driven Architecture</span>
+          <span class="badge">Kafka Patterns</span>
+          <span class="badge">Kubernetes Observability</span>
+          <span class="badge">DevSecOps Golden Paths</span>
+          <span class="badge">Tech Lead Lessons</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .blog-page { padding: 4rem 0 2rem; }
+
+  .page-header { margin-bottom: 3rem; }
+
+  .page-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.75rem;
+  }
+
+  .page-subtitle {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin: 0;
+    max-width: 600px;
+  }
+
+  .blog-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 5rem 2rem;
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border);
+    border-radius: 16px;
+    gap: 1rem;
+  }
+
+  .empty-icon {
+    color: var(--color-text-muted);
+    opacity: 0.5;
+    margin-bottom: 0.5rem;
+  }
+
+  .blog-empty h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .blog-empty p {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    max-width: 500px;
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  .upcoming-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+</style>

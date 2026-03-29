@@ -1,0 +1,193 @@
+{
+  "personal": {
+    "name": "Gerardo Lucero",
+    "title": "Technical Product Manager | Solutions Architect",
+    "email": "luceroriosg@gmail.com",
+    "phone": "+52 612-1419800",
+    "location": "Mexico City, Mexico",
+    "linkedin": "https://linkedin.com/in/luceroriosg",
+    "github": "https://github.com/GerardoLucero",
+    "summary": "Over 7 years building distributed systems with Kafka on Kubernetes, implementing CI/CD pipelines in AWS and GCP, and ensuring end-to-end observability. Experienced in technical leadership across multiple teams, standardization of pipelines, and design of event-driven and hexagonal architectures. Focused on performance, reliability, and incremental delivery. Passionate about mentoring, cloud transformation, and technical excellence."
+  },
+  "experience": [
+    {
+      "title": "Solutions Architect",
+      "company": "Círculo de Crédito",
+      "period": "2024 – Present",
+      "startYear": 2024,
+      "location": "Mexico City, Mexico",
+      "type": "Full-time",
+      "description": "Design and implement cloud-native solutions on AWS using ECS and Lambda, prioritizing scalability, resilience, and security. Built an Internal Developer Platform (IDP) for Kubernetes supporting multiple deployment stacks, enabling teams to self-serve infrastructure consistently. Implemented Karpenter for dynamic worker node optimization and Jenkins-based pipelines for standardized delivery. Proposed and led architecture initiatives including a generic batch orchestration framework with Feature Store integration and a centralized authentication layer. Strengthened observability through Dynatrace and drive the OpenShift transition strategy aligned with business roadmaps.",
+      "highlights": [
+        "Internal Developer Platform (IDP) on Kubernetes — multi-stack deployments, golden paths and self-service infrastructure for engineering teams",
+        "Karpenter + Jenkins: dynamic worker node scaling and standardized CI/CD pipelines",
+        "Batch orchestration architecture with Feature Store integration for ML workloads",
+        "Centralized authentication layer — unified identity and access control across services",
+        "Dynatrace observability with SLO/SLI definition and distributed tracing across teams",
+        "OpenShift transition strategy aligned with product and business roadmaps"
+      ],
+      "tags": ["AWS", "Kubernetes", "IDP", "Karpenter", "Jenkins", "OpenShift", "Feature Store", "Dynatrace", "SLO/SLI"]
+    },
+    {
+      "title": "DevSecOps Engineer",
+      "company": "Consubanco México",
+      "period": "2024",
+      "startYear": 2024,
+      "location": "Mexico City, Mexico",
+      "type": "Contract",
+      "description": "Implemented secure CI/CD pipelines in GitHub Actions with SAST, DAST, quality gates, code coverage, and policy-as-code to ensure regulatory compliance. Built reusable libraries for multi-platform deployments across Kubernetes, Cloud Run, and on-premise environments. Applied container hardening, secret management, and dependency scanning, while defining 'golden paths' with templates, linters, and conventions that reduced defects and accelerated delivery times.",
+      "highlights": [
+        "Secure CI/CD pipelines with SAST, DAST, quality gates and policy-as-code",
+        "Reusable deployment libraries for Kubernetes, Cloud Run and on-premise",
+        "Container hardening, secret management and dependency scanning",
+        "Golden path templates reducing defects and accelerating delivery"
+      ],
+      "tags": ["GitHub Actions", "SAST", "DAST", "Kubernetes", "Cloud Run", "DevSecOps"]
+    },
+    {
+      "title": "Solutions Architect / Tech Lead Product",
+      "company": "Petco México",
+      "period": "2023 – 2024",
+      "startYear": 2023,
+      "location": "Mexico City, Mexico",
+      "type": "Full-time",
+      "description": "Led and managed end-to-end technology projects, coordinating multi-disciplinary teams to ensure successful delivery of scalable solutions. Oversaw the implementation of platforms across both on-premise and cloud environments, standardizing architecture and deployment practices.",
+      "highlights": [
+        "End-to-end technology project leadership across multiple squads",
+        "Platform implementation across on-premise and cloud environments",
+        "Architecture and deployment standardization"
+      ],
+      "tags": ["Architecture", "Tech Lead", "Cloud", "On-premise", "Project Management"]
+    },
+    {
+      "title": "Technical Product Manager",
+      "company": "Grupo Findep",
+      "period": "2020 – 2023",
+      "startYear": 2020,
+      "location": "Mexico City, Mexico",
+      "type": "Full-time",
+      "description": "Directed the development of a state-machine-based digital credit storage component used across three business units, significantly improving request processing times. Managed the full lifecycle of digital payments including Oxxo, cards, direct debits and third-party integrations. Led the creation of a fully digital mobile sales application built on Kafka and Kubernetes for mission-critical scalability.",
+      "highlights": [
+        "State-machine credit component deployed across 3 Grupo Findep companies",
+        "Full digital payments lifecycle: Oxxo, cards, direct debits, third parties",
+        "Fully digital mobile sales app from concept to production",
+        "Kafka + Kubernetes for mission-critical financial operations"
+      ],
+      "tags": ["Kafka", "Kubernetes", "Fintech", "Mobile", "Payments", "Product Management"]
+    },
+    {
+      "title": "Tech Lead Engineer",
+      "company": "Microsistemas",
+      "period": "2017 – 2019",
+      "startYear": 2017,
+      "location": "La Paz, Mexico",
+      "type": "Full-time",
+      "description": "Developed and implemented a web-based car rental system that optimized payment and booking workflows. Led the design and development of a real-time reservation system enabling dynamic pricing and availability management, ensuring an efficient and user-friendly experience.",
+      "highlights": [
+        "Web-based car rental system with optimized payment workflows",
+        "Real-time reservation system with dynamic pricing",
+        "Full-stack development and team leadership"
+      ],
+      "tags": ["Node.js", "JavaScript", "React", "SQL", "REST APIs"]
+    }
+  ],
+  "education": [
+    {
+      "degree": "Kafka Summit",
+      "institution": "Confluent",
+      "location": "London, United Kingdom",
+      "year": "2023",
+      "type": "conference"
+    },
+    {
+      "degree": "Diploma in Artificial Intelligence",
+      "institution": "Universidad del Valle de México",
+      "location": "Mexico City, Mexico",
+      "year": "2022 – 2023",
+      "type": "diploma"
+    },
+    {
+      "degree": "B.S. in Computer Systems Engineering",
+      "institution": "Instituto Tecnológico de La Paz",
+      "location": "La Paz, Mexico",
+      "year": "2012 – 2017",
+      "type": "degree"
+    }
+  ],
+  "skills": {
+    "management": [
+      "Product Roadmapping",
+      "Prioritization",
+      "Process Optimization",
+      "Agile Methodologies",
+      "Technical Documentation",
+      "Multi-team Leadership"
+    ],
+    "architecture": [
+      "Cloud Native Design",
+      "Internal Developer Platform (IDP)",
+      "Event-driven Architecture",
+      "Hexagonal Architecture",
+      "Batch Orchestration & Feature Store",
+      "Centralized Authentication",
+      "Microservices",
+      "CI/CD Pipelines",
+      "DevSecOps"
+    ],
+    "cloud": [
+      "AWS (ECS, Lambda, SQS)",
+      "Google Cloud Platform",
+      "Azure DevOps",
+      "Kubernetes",
+      "OpenShift",
+      "Karpenter",
+      "Cloud Run"
+    ],
+    "observability": [
+      "Dynatrace",
+      "Grafana",
+      "Prometheus",
+      "Distributed Tracing",
+      "SLO / SLI"
+    ],
+    "languages": [
+      "Java",
+      "Python",
+      "JavaScript",
+      "TypeScript",
+      "PHP",
+      "VB.NET"
+    ],
+    "frameworks": [
+      "Spring Boot",
+      "Node.js",
+      "React.js",
+      "React Native",
+      "Angular",
+      "Electron"
+    ],
+    "data": [
+      "Kafka",
+      "MongoDB",
+      "PostgreSQL",
+      "MySQL",
+      "Firebase",
+      "DynamoDB"
+    ],
+    "tools": [
+      "GitHub Actions",
+      "Docker",
+      "Terraform",
+      "SAST / DAST",
+      "Arduino"
+    ]
+  },
+  "languages": [
+    { "language": "Spanish", "level": "Native" },
+    { "language": "English", "level": "Professional" }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-03-29"
+  }
+}

@@ -1,0 +1,52 @@
+---
+import Navigation from "./Navigation.astro";
+import Footer from "./Footer.astro";
+import "../../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  ogTitle?: string;
+}
+
+const {
+  title,
+  description = "Gerardo Lucero — Solutions Architect & Technical Product Manager. Building distributed systems at scale.",
+  ogTitle,
+} = Astro.props;
+
+const fullTitle = title === "Home" ? "Gerardo Lucero" : `${title} — Gerardo Lucero`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="author" content="Gerardo Lucero" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={ogTitle ?? fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content="Gerardo Lucero" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>{fullTitle}</title>
+  </head>
+  <body>
+    <Navigation />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

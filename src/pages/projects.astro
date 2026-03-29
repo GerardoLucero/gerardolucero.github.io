@@ -1,0 +1,194 @@
+---
+import BaseLayout from "../components/layout/BaseLayout.astro";
+import RepoGrid from "../components/projects/RepoGrid";
+---
+
+<BaseLayout
+  title="Projects"
+  description="Gerardo Lucero's GitHub projects — distributed systems, cloud architecture, and more."
+>
+  <div class="projects-page">
+    <div class="container">
+
+      <header class="page-header animate-fade-in-up">
+        <h1 class="page-title">Projects</h1>
+        <p class="page-subtitle">
+          Open-source work and side projects. Fetched live from
+          <a href="https://github.com/GerardoLucero" target="_blank" rel="noopener">GitHub</a>.
+        </p>
+      </header>
+
+      <div class="animate-fade-in-up delay-200">
+        <RepoGrid username="GerardoLucero" client:load />
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .projects-page { padding: 4rem 0 2rem; }
+
+  .page-header {
+    margin-bottom: 3rem;
+  }
+
+  .page-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.75rem;
+  }
+
+  .page-subtitle {
+    font-size: 1rem;
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  /* ── Repo grid styles (via global scope from Preact) ── */
+  :global(.repo-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+
+  :global(.repo-card) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-decoration: none;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+
+  :global(.repo-card:hover) {
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+
+  :global(.repo-header) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  :global(.repo-icon) {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+  }
+
+  :global(.repo-name) {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-primary-light);
+    font-family: var(--font-mono);
+  }
+
+  :global(.repo-desc) {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  :global(.repo-topics) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  :global(.repo-topic) {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-light));
+    color: var(--color-accent);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+  }
+
+  :global(.repo-footer) {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  :global(.repo-lang) {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  :global(.lang-dot) {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  :global(.repo-stat) {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  :global(.repo-updated) {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    margin-left: auto;
+  }
+
+  :global(.loading-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+
+  :global(.repo-skeleton) {
+    height: 160px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    animation: shimmer 1.5s infinite;
+    background: linear-gradient(
+      90deg,
+      var(--color-surface) 25%,
+      var(--color-surface-light) 50%,
+      var(--color-surface) 75%
+    );
+    background-size: 200% 100%;
+  }
+
+  :global(.repo-error),
+  :global(.repo-empty) {
+    padding: 3rem;
+    text-align: center;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border);
+    border-radius: 12px;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>

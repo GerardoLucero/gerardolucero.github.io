@@ -1,0 +1,429 @@
+---
+import BaseLayout from "../components/layout/BaseLayout.astro";
+import cvData from "../content/cv/cv-data.json";
+
+const { personal, experience, education, skills, languages } = cvData;
+---
+
+<BaseLayout
+  title="CV"
+  description="Gerardo Lucero's CV — Solutions Architect & Technical Product Manager with 7+ years in distributed systems."
+>
+  <div class="cv-page">
+    <div class="container">
+
+      <!-- Header -->
+      <header class="cv-header animate-fade-in-up">
+        <div class="cv-header-content">
+          <h1 class="cv-name">{personal.name}</h1>
+          <p class="cv-title">{personal.title}</p>
+          <div class="cv-contacts">
+            <a href={`mailto:${personal.email}`} class="cv-contact-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              {personal.email}
+            </a>
+            <a href={personal.linkedin} target="_blank" rel="noopener" class="cv-contact-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+              linkedin.com/in/luceroriosg
+            </a>
+            <a href={personal.github} target="_blank" rel="noopener" class="cv-contact-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+              GerardoLucero
+            </a>
+            <span class="cv-contact-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              {personal.location}
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Summary -->
+      <section class="cv-section animate-fade-in-up delay-100">
+        <h2 class="section-title">Profile</h2>
+        <p class="cv-summary">{personal.summary}</p>
+      </section>
+
+      <!-- Experience -->
+      <section class="cv-section animate-fade-in-up delay-200">
+        <h2 class="section-title">Experience</h2>
+        <div class="timeline">
+          {experience.map((job, i) => (
+            <div class="timeline-item">
+              <div class="timeline-marker">
+                <div class="timeline-dot"></div>
+                {i < experience.length - 1 && <div class="timeline-line"></div>}
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <div class="timeline-meta">
+                    <h3 class="job-title">{job.title}</h3>
+                    <div class="job-info">
+                      <span class="job-company">{job.company}</span>
+                      <span class="job-sep">·</span>
+                      <span class="job-period">{job.period}</span>
+                      <span class="job-sep">·</span>
+                      <span class="badge job-type-badge">{job.type}</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="job-desc">{job.description}</p>
+                <ul class="job-highlights">
+                  {job.highlights.map((h) => (
+                    <li>
+                      <span class="highlight-arrow">→</span>
+                      {h}
+                    </li>
+                  ))}
+                </ul>
+                <div class="job-tags">
+                  {job.tags.map((tag) => (
+                    <span class="badge badge-accent">{tag}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- Two-column: Skills + Education -->
+      <div class="cv-two-col animate-fade-in-up delay-300">
+
+        <!-- Skills -->
+        <section class="cv-section">
+          <h2 class="section-title">Skills</h2>
+          <div class="skills-grid">
+            {Object.entries(skills).map(([category, items]) => (
+              <div class="skill-group">
+                <h4 class="skill-category">{category.charAt(0).toUpperCase() + category.slice(1)}</h4>
+                <div class="skill-badges">
+                  {(items as string[]).map((skill) => (
+                    <span class="badge">{skill}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div>
+          <!-- Education -->
+          <section class="cv-section">
+            <h2 class="section-title">Education</h2>
+            <div class="edu-list">
+              {education.map((edu) => (
+                <div class="edu-item">
+                  <div class="edu-icon">
+                    {edu.type === "degree" ? "🎓" : edu.type === "diploma" ? "📜" : "🎤"}
+                  </div>
+                  <div class="edu-content">
+                    <h4 class="edu-degree">{edu.degree}</h4>
+                    <p class="edu-institution">{edu.institution}</p>
+                    <p class="edu-meta">{edu.location} · {edu.year}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <!-- Languages -->
+          <section class="cv-section">
+            <h2 class="section-title">Languages</h2>
+            <div class="lang-list">
+              {languages.map((lang) => (
+                <div class="lang-item">
+                  <span class="lang-name">{lang.language}</span>
+                  <span class="badge badge-primary">{lang.level}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .cv-page { padding: 4rem 0 2rem; }
+
+  /* ── Header ──────────────────────────── */
+  .cv-header {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin-bottom: 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cv-header::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  }
+
+  .cv-name {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0 0 0.25rem;
+  }
+
+  .cv-title {
+    font-size: 1.1rem;
+    color: var(--color-text-muted);
+    margin: 0 0 1.5rem;
+    font-weight: 500;
+  }
+
+  .cv-contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+  }
+
+  .cv-contact-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    transition: color 0.2s;
+  }
+
+  .cv-contact-item:hover { color: var(--color-primary-light); }
+
+  /* ── Section ────────────────────────── */
+  .cv-section { margin-bottom: 3rem; }
+
+  .cv-summary {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    line-height: 1.8;
+    max-width: 780px;
+    margin: 0;
+  }
+
+  /* ── Timeline ───────────────────────── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+
+  .timeline-item {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 1.25rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 0.3rem;
+    flex-shrink: 0;
+  }
+
+  .timeline-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    border: 2px solid var(--color-bg);
+    box-shadow: 0 0 0 2px var(--color-primary);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .timeline-item:first-child .timeline-dot {
+    background: var(--color-accent);
+    box-shadow: 0 0 0 2px var(--color-accent),
+                0 0 12px color-mix(in srgb, var(--color-accent) 40%, transparent);
+  }
+
+  .timeline-line {
+    flex: 1;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--color-border-light), var(--color-border));
+    margin-top: 0.5rem;
+  }
+
+  .timeline-content {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
+
+  .timeline-content:hover { border-color: var(--color-primary); }
+
+  .job-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-heading);
+    margin: 0 0 0.35rem;
+  }
+
+  .job-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .job-company {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-primary-light);
+  }
+
+  .job-period {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .job-sep { color: var(--color-border-light); }
+
+  .job-type-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+  }
+
+  .job-desc {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.75;
+    margin: 0 0 1rem;
+  }
+
+  .job-highlights {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .job-highlights li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
+
+  .highlight-arrow {
+    color: var(--color-primary);
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  .job-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  /* ── Two column layout ───────────────── */
+  .cv-two-col {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  /* ── Skills ─────────────────────────── */
+  .skills-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .skill-group {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+
+  .skill-category {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-accent);
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+
+  .skill-badges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  /* ── Education ──────────────────────── */
+  .edu-list { display: flex; flex-direction: column; gap: 1rem; }
+
+  .edu-item {
+    display: flex;
+    gap: 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .edu-icon { font-size: 1.25rem; flex-shrink: 0; padding-top: 0.1rem; }
+
+  .edu-degree {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-heading);
+    margin: 0 0 0.2rem;
+  }
+
+  .edu-institution {
+    font-size: 0.8rem;
+    color: var(--color-primary-light);
+    margin: 0 0 0.2rem;
+  }
+
+  .edu-meta {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    margin: 0;
+  }
+
+  /* ── Languages ──────────────────────── */
+  .lang-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .lang-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+  }
+
+  .lang-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  /* ── Responsive ──────────────────────── */
+  @media (max-width: 900px) {
+    .cv-two-col { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .cv-header { padding: 1.5rem; }
+    .timeline-item { grid-template-columns: 20px 1fr; gap: 1rem; }
+  }
+</style>

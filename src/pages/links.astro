@@ -1,0 +1,295 @@
+---
+import BaseLayout from "../components/layout/BaseLayout.astro";
+
+const links = [
+  {
+    category: "Professional",
+    items: [
+      {
+        label: "LinkedIn",
+        href: "https://linkedin.com/in/luceroriosg",
+        desc: "Professional profile & work history",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>`,
+      },
+      {
+        label: "GitHub",
+        href: "https://github.com/GerardoLucero",
+        desc: "Open-source projects & code",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>`,
+      },
+      {
+        label: "Email",
+        href: "mailto:luceroriosg@gmail.com",
+        desc: "luceroriosg@gmail.com",
+        icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`,
+      },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title="Contact"
+  description="Get in touch with Gerardo Lucero — Solutions Architect & Technical PM."
+>
+  <div class="links-page">
+    <div class="container links-container">
+
+      <!-- Profile card -->
+      <div class="profile-card animate-fade-in-up">
+        <div class="profile-avatar">
+          <span class="avatar-initials">GL</span>
+          <div class="avatar-ring"></div>
+        </div>
+        <h1 class="profile-name">Gerardo Lucero</h1>
+        <p class="profile-title">Solutions Architect & Technical PM</p>
+        <p class="profile-location">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Mexico City, Mexico
+        </p>
+        <p class="profile-bio">
+          Building distributed systems at scale — Kafka, Kubernetes, AWS & GCP. Open to new opportunities.
+        </p>
+      </div>
+
+      <!-- Links -->
+      {links.map((group) => (
+        <div class="link-group animate-fade-in-up delay-200">
+          <h2 class="link-category">{group.category}</h2>
+          <div class="link-list">
+            {group.items.map((item) => (
+              <a href={item.href} target={item.href.startsWith("mailto") ? undefined : "_blank"} rel="noopener noreferrer" class="link-item">
+                <span class="link-icon" set:html={item.icon}></span>
+                <div class="link-text">
+                  <span class="link-label">{item.label}</span>
+                  <span class="link-desc">{item.desc}</span>
+                </div>
+                <svg class="link-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M7 7h10v10M7 17 17 7"/>
+                </svg>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <!-- Quick message -->
+      <div class="message-card animate-fade-in-up delay-300">
+        <h2>Open to conversations</h2>
+        <p>
+          Whether you're looking for a solutions architect, a technical PM, or just want to talk about
+          distributed systems — my inbox is open.
+        </p>
+        <a href="mailto:luceroriosg@gmail.com" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+          Send a message
+        </a>
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .links-page { padding: 4rem 0 2rem; }
+
+  .links-container {
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* ── Profile card ──────────────────── */
+  .profile-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .profile-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  }
+
+  .profile-avatar {
+    position: relative;
+    display: inline-flex;
+    margin-bottom: 1.25rem;
+  }
+
+  .avatar-initials {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    position: relative;
+    z-index: 1;
+  }
+
+  .avatar-ring {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+    opacity: 0.4;
+    animation: pulse-ring 3s infinite;
+  }
+
+  @keyframes pulse-ring {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.05); opacity: 0.2; }
+  }
+
+  .profile-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0 0 0.25rem;
+    letter-spacing: -0.02em;
+  }
+
+  .profile-title {
+    font-size: 0.875rem;
+    color: var(--color-primary-light);
+    margin: 0 0 0.75rem;
+    font-weight: 500;
+  }
+
+  .profile-location {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    margin: 0 0 1rem;
+  }
+
+  .profile-bio {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ── Link items ─────────────────────── */
+  .link-category {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    margin: 0 0 0.75rem;
+  }
+
+  .link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .link-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    text-decoration: none;
+    color: var(--color-text);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+
+  .link-item:hover {
+    border-color: var(--color-primary);
+    transform: translateX(4px);
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+
+  .link-icon {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+  }
+
+  .link-item:hover .link-icon { color: var(--color-primary-light); }
+
+  .link-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    flex: 1;
+  }
+
+  .link-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-heading);
+  }
+
+  .link-desc {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .link-arrow {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .link-item:hover .link-arrow {
+    opacity: 1;
+    transform: translate(2px, -2px);
+  }
+
+  /* ── Message card ────────────────────── */
+  .message-card {
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--color-primary) 8%, var(--color-surface)),
+      color-mix(in srgb, var(--color-accent) 5%, var(--color-surface))
+    );
+    border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    border-radius: 16px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .message-card h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .message-card p {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin: 0;
+  }
+</style>
