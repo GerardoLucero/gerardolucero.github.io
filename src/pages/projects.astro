@@ -57,11 +57,13 @@ try {
   if (commitsRes.ok) githubCommits = (await commitsRes.json()).total_count ?? 0;
 } catch (_) { /* fail silently on build */ }
 
-// ── Lines of code via codetabs (build-time) ────────────────────────────────
-let totalLinesOfCode = 0;
+// ── Lines of code via GitHub code_frequency (build-time) ──────────────────
+// code_frequency returns [[weekTimestamp, additions, deletions], ...]
+let locLastMonth = 0;
+let locLastYear  = 0;
+let locAllTime   = 0;
 
 try {
-  // 1. Get all non-fork public repos
   const reposRes = await fetch(
     "https://api.github.com/users/GerardoLucero/repos?per_page=100&type=owner",
     { headers: { Accept: "application/vnd.github.v3+json" } }
@@ -70,7 +72,45 @@ try {
     const repos: Array<{ name: string; fork: boolean }> = await reposRes.json();
     const ownRepos = repos.filter(r => !r.fork).map(r => r.name);
 
-    // 2. Call codetabs for each repo in parallel (max 10 at a time)
+    const now        = Date.now() / 1000; // unix seconds
+    const monthAgo   = now - 30  * 24 * 3600;
+    const yearAgo    = now - 365 * 24 * 3600;
+
+    const CHUNK = 8;
+    for (let i = 0; i < ownRepos.length; i += CHUNK) {
+      const chunk = ownRepos.slice(i, i + CHUNK);
+      const results = await Promise.allSettled(
+        chunk.map(repo =>
+          fetch(
+            `https://api.github.com/repos/GerardoLucero/${repo}/stats/code_frequency`,
+            { headers: { Accept: "application/vnd.github.v3+json" } }
+          ).then(r => r.ok ? r.json() : [])
+        )
+      );
+      for (const result of results) {
+        if (result.status !== "fulfilled" || !Array.isArray(result.value)) continue;
+        for (const [ts, additions] of result.value as [number, number, number][]) {
+          if (!additions || additions <= 0) continue;
+          locAllTime += additions;
+          if (ts >= yearAgo)  locLastYear  += additions;
+          if (ts >= monthAgo) locLastMonth += additions;
+        }
+      }
+    }
+  }
+} catch (_) { /* fail silently on build */ }
+
+// ── Lines of code via codetabs — total snapshot ────────────────────────────
+let totalLinesOfCode = 0;
+
+try {
+  const reposRes = await fetch(
+    "https://api.github.com/users/GerardoLucero/repos?per_page=100&type=owner",
+    { headers: { Accept: "application/vnd.github.v3+json" } }
+  );
+  if (reposRes.ok) {
+    const repos: Array<{ name: string; fork: boolean }> = await reposRes.json();
+    const ownRepos = repos.filter(r => !r.fork).map(r => r.name);
     const CHUNK = 10;
     for (let i = 0; i < ownRepos.length; i += CHUNK) {
       const chunk = ownRepos.slice(i, i + CHUNK);
@@ -100,7 +140,13 @@ const statsBar = [
   { value: fmt(totalNpmDownloads) || "—", label: "npm downloads / month" },
   { value: NPM_PACKAGES.length.toString(),  label: "npm packages" },
   { value: fmt(githubCommits) || "—",       label: `commits ${new Date().getFullYear()}` },
-  { value: fmt(totalLinesOfCode) || "—",    label: "lines of code" },
+  { value: fmt(totalLinesOfCode) || "—",    label: "lines of code (total)" },
+];
+
+const locStats = [
+  { value: fmt(locLastMonth) || "—", label: "last 30 days" },
+  { value: fmt(locLastYear)  || "—", label: "last 12 months" },
+  { value: fmt(locAllTime)   || "—", label: "all time" },
 ];
 ---
 
@@ -128,6 +174,19 @@ const statsBar = [
             <span class="stat-label">{s.label}</span>
           </div>
         ))}
+      </div>
+
+      <!-- Lines of code breakdown -->
+      <div class="loc-bar animate-fade-in-up delay-150">
+        <span class="loc-title">Lines of code written</span>
+        <div class="loc-periods">
+          {locStats.map(s => (
+            <div class="loc-item">
+              <span class="loc-value">{s.value}</span>
+              <span class="loc-label">{s.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <!-- npm packages -->
@@ -235,6 +294,54 @@ const statsBar = [
     font-family: var(--font-mono);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+
+  /* ── Lines of code bar ─────────────────────────────────── */
+  .loc-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+    border: 1px solid color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
+    border-radius: 12px;
+    padding: 1rem 1.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .loc-title {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  .loc-periods {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .loc-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .loc-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--color-primary-light);
+    letter-spacing: -0.02em;
+  }
+
+  .loc-label {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
   }
 
   /* ── Sections ──────────────────────────────────────────── */
