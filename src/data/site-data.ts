@@ -1,19 +1,19 @@
 export const siteData = {
   name: "Gerardo Lucero",
   shortName: "GL",
-  title: "Solutions Architect & Technical PM",
+  title: "Solutions Architect | DevSecOps Engineer",
   taglines: [
     "Building distributed systems at scale.",
     "Cloud-native architecture on AWS & GCP.",
     "Event-driven design with Kafka & Kubernetes.",
-    "Bridging engineering & product strategy.",
+    "Security-first engineering across 1,200+ repositories.",
   ],
   summary:
-    "7+ years designing and delivering distributed systems. From Kafka pipelines and Kubernetes clusters to product roadmaps and multi-team leadership — I operate at the intersection of deep engineering and strategic product thinking.",
+    "7+ years building distributed systems across fintech and retail. Rare combination of platform architecture, security engineering (DevSecOps), and technical product management — operating across Kafka, Kubernetes, AWS, and GCP at production scale.",
   highlights: [
     { value: "7+", label: "Years of experience" },
-    { value: "5", label: "Companies & industries" },
-    { value: "3", label: "Cloud platforms" },
+    { value: "1B+", label: "MXN transactions processed" },
+    { value: "1,200+", label: "Repos standardized" },
   ],
   contact: {
     email: "luceroriosg@gmail.com",
@@ -37,10 +37,10 @@ export const siteData = {
     },
     {
       icon: "⬡",
-      title: "Technical Product",
+      title: "DevSecOps & Security",
       description:
-        "Roadmap ownership, multi-team coordination, and delivery in fast-paced agile environments across fintech and retail.",
-      tags: ["Roadmaps", "Agile", "DevSecOps", "CI/CD"],
+        "Secure CI/CD pipelines with SAST, DAST, policy-as-code and container hardening. Compliance-ready infrastructure for regulated financial environments.",
+      tags: ["GitHub Actions", "SAST/DAST", "Policy-as-Code", "Compliance"],
     },
   ],
 };
