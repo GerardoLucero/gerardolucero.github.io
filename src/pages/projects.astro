@@ -57,6 +57,39 @@ try {
   if (commitsRes.ok) githubCommits = (await commitsRes.json()).total_count ?? 0;
 } catch (_) { /* fail silently on build */ }
 
+// ── Lines of code via codetabs (build-time) ────────────────────────────────
+let totalLinesOfCode = 0;
+
+try {
+  // 1. Get all non-fork public repos
+  const reposRes = await fetch(
+    "https://api.github.com/users/GerardoLucero/repos?per_page=100&type=owner",
+    { headers: { Accept: "application/vnd.github.v3+json" } }
+  );
+  if (reposRes.ok) {
+    const repos: Array<{ name: string; fork: boolean }> = await reposRes.json();
+    const ownRepos = repos.filter(r => !r.fork).map(r => r.name);
+
+    // 2. Call codetabs for each repo in parallel (max 10 at a time)
+    const CHUNK = 10;
+    for (let i = 0; i < ownRepos.length; i += CHUNK) {
+      const chunk = ownRepos.slice(i, i + CHUNK);
+      const results = await Promise.allSettled(
+        chunk.map(repo =>
+          fetch(`https://api.codetabs.com/v1/loc?github=GerardoLucero/${repo}`)
+            .then(r => r.ok ? r.json() : [])
+        )
+      );
+      for (const result of results) {
+        if (result.status === "fulfilled" && Array.isArray(result.value)) {
+          const total = result.value.find((l: { language: string; linesOfCode: number }) => l.language === "Total");
+          if (total?.linesOfCode) totalLinesOfCode += total.linesOfCode;
+        }
+      }
+    }
+  }
+} catch (_) { /* fail silently on build */ }
+
 function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`;
@@ -67,7 +100,7 @@ const statsBar = [
   { value: fmt(totalNpmDownloads) || "—", label: "npm downloads / month" },
   { value: NPM_PACKAGES.length.toString(),  label: "npm packages" },
   { value: fmt(githubCommits) || "—",       label: `commits ${new Date().getFullYear()}` },
-  { value: githubRepos || "—",              label: "public repos" },
+  { value: fmt(totalLinesOfCode) || "—",    label: "lines of code" },
 ];
 ---
 
