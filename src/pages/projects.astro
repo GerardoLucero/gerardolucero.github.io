@@ -1,11 +1,79 @@
 ---
 import BaseLayout from "../components/layout/BaseLayout.astro";
 import RepoGrid from "../components/projects/RepoGrid";
+
+const NPM_PACKAGES = [
+  { name: "calcula-rfc",           desc: "RFC calculator with homoclave for individuals" },
+  { name: "calcula-curp",          desc: "CURP calculator with verifier digit" },
+  { name: "calculadora-isr",       desc: "Mexican ISR tax calculator with updated rates" },
+  { name: "calculadora-nomina-mx", desc: "Payroll calculator with IMSS, ISR & Infonavit" },
+  { name: "calculadora-imss",      desc: "IMSS contribution calculator 2024" },
+  { name: "calculadora-iva",       desc: "IVA calculator for 16%, 8% and 0% rates" },
+  { name: "mx-bancos",             desc: "Mexican banks catalog with CLABE codes" },
+  { name: "mx-feriados",           desc: "Mexican official holidays with auto calculations" },
+  { name: "mx-nombres",            desc: "Mexican names database with statistics" },
+  { name: "mx-codigos-postales",   desc: "Postal codes with geolocation and search" },
+  { name: "validador-fiscal-mx",   desc: "RFC, CURP and NSS validator" },
+  { name: "validador-clabe",       desc: "CLABE validator, generator and info extractor" },
+  { name: "calendario-fiscal-mx",  desc: "SAT fiscal obligations calendar with deadlines" },
+  { name: "generador-datos-mx",    desc: "Realistic Mexican test data generator" },
+];
+
+// ── npm downloads (build-time) ─────────────────────────────────────────────
+let npmStats: Record<string, number> = {};
+let totalNpmDownloads = 0;
+
+try {
+  const list = NPM_PACKAGES.map(p => p.name).join(",");
+  const res = await fetch(
+    `https://api.npmjs.org/downloads/point/last-month/${list}`
+  );
+  if (res.ok) {
+    const data = await res.json();
+    for (const pkg of NPM_PACKAGES) {
+      const count: number = data[pkg.name]?.downloads ?? 0;
+      npmStats[pkg.name] = count;
+      totalNpmDownloads += count;
+    }
+  }
+} catch (_) { /* fail silently on build */ }
+
+// ── GitHub stats (build-time) ─────────────────────────────────────────────
+let githubRepos = 0;
+let githubCommits = 0;
+
+try {
+  const year = new Date().getFullYear();
+  const [userRes, commitsRes] = await Promise.all([
+    fetch("https://api.github.com/users/GerardoLucero", {
+      headers: { Accept: "application/vnd.github.v3+json" },
+    }),
+    fetch(
+      `https://api.github.com/search/commits?q=author:GerardoLucero+committer-date:>${year}-01-01&per_page=1`,
+      { headers: { Accept: "application/vnd.github.cloak-preview" } }
+    ),
+  ]);
+  if (userRes.ok)    githubRepos   = (await userRes.json()).public_repos ?? 0;
+  if (commitsRes.ok) githubCommits = (await commitsRes.json()).total_count ?? 0;
+} catch (_) { /* fail silently on build */ }
+
+function fmt(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`;
+  return n.toString();
+}
+
+const statsBar = [
+  { value: fmt(totalNpmDownloads) || "—", label: "npm downloads / month" },
+  { value: NPM_PACKAGES.length.toString(),  label: "npm packages" },
+  { value: fmt(githubCommits) || "—",       label: `commits ${new Date().getFullYear()}` },
+  { value: githubRepos || "—",              label: "public repos" },
+];
 ---
 
 <BaseLayout
   title="Projects"
-  description="Gerardo Lucero's GitHub projects — distributed systems, cloud architecture, and more."
+  description="Open-source npm packages and GitHub projects by Gerardo Lucero — Mexican fiscal utilities, distributed systems tooling."
 >
   <div class="projects-page">
     <div class="container">
@@ -13,14 +81,65 @@ import RepoGrid from "../components/projects/RepoGrid";
       <header class="page-header animate-fade-in-up">
         <h1 class="page-title">Projects</h1>
         <p class="page-subtitle">
-          Open-source work and side projects. Fetched live from
-          <a href="https://github.com/GerardoLucero" target="_blank" rel="noopener">GitHub</a>.
+          Open-source packages on <a href="https://www.npmjs.com/~gerardolucero" target="_blank" rel="noopener">npm</a>
+          and repositories on <a href="https://github.com/GerardoLucero" target="_blank" rel="noopener">GitHub</a>.
+          Stats refreshed on every deploy.
         </p>
       </header>
 
-      <div class="animate-fade-in-up delay-200">
-        <RepoGrid username="GerardoLucero" client:load />
+      <!-- Stats bar -->
+      <div class="stats-bar animate-fade-in-up delay-100">
+        {statsBar.map(s => (
+          <div class="stat-item">
+            <span class="stat-value">{s.value}</span>
+            <span class="stat-label">{s.label}</span>
+          </div>
+        ))}
       </div>
+
+      <!-- npm packages -->
+      <section class="section animate-fade-in-up delay-200">
+        <h2 class="section-title">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M0 0v16h16V0H0zm14 14H8V8h2v4h2V8h2v6zm-8 0H2V2h12v2H6v10z"/>
+          </svg>
+          npm packages
+        </h2>
+        <p class="section-desc">
+          14 utilities for the Mexican ecosystem — fiscal, financial, and data tooling.
+        </p>
+        <div class="npm-grid">
+          {NPM_PACKAGES.map(pkg => (
+            <a
+              href={`https://www.npmjs.com/package/${pkg.name}`}
+              target="_blank"
+              rel="noopener"
+              class="npm-card"
+            >
+              <div class="npm-header">
+                <span class="npm-name">{pkg.name}</span>
+                {npmStats[pkg.name] > 0 && (
+                  <span class="npm-downloads">
+                    ↓ {fmt(npmStats[pkg.name])}/mo
+                  </span>
+                )}
+              </div>
+              <p class="npm-desc">{pkg.desc}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- GitHub repos -->
+      <section class="section animate-fade-in-up delay-300">
+        <h2 class="section-title">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          GitHub repositories
+        </h2>
+        <RepoGrid username="GerardoLucero" client:load />
+      </section>
 
     </div>
   </div>
@@ -29,9 +148,7 @@ import RepoGrid from "../components/projects/RepoGrid";
 <style>
   .projects-page { padding: 4rem 0 2rem; }
 
-  .page-header {
-    margin-bottom: 3rem;
-  }
+  .page-header { margin-bottom: 2rem; }
 
   .page-title {
     font-size: clamp(2rem, 4vw, 3rem);
@@ -46,7 +163,126 @@ import RepoGrid from "../components/projects/RepoGrid";
     margin: 0;
   }
 
-  /* ── Repo grid styles (via global scope from Preact) ── */
+  .page-subtitle a {
+    color: var(--color-primary-light);
+    text-decoration: none;
+  }
+  .page-subtitle a:hover { text-decoration: underline; }
+
+  /* ── Stats bar ─────────────────────────────────────────── */
+  .stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.25rem 1.75rem;
+    margin-bottom: 3rem;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 100px;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--color-heading);
+    letter-spacing: -0.03em;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Sections ──────────────────────────────────────────── */
+  .section { margin-bottom: 3.5rem; }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-heading);
+    margin: 0 0 0.5rem;
+  }
+
+  .section-title svg { color: var(--color-text-muted); flex-shrink: 0; }
+
+  .section-desc {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin: 0 0 1.25rem;
+  }
+
+  /* ── npm grid ──────────────────────────────────────────── */
+  .npm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .npm-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    text-decoration: none;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .npm-card:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .npm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .npm-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--color-primary-light);
+  }
+
+  .npm-downloads {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-light));
+    border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    white-space: nowrap;
+  }
+
+  .npm-desc {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* ── Repo grid (Preact component) ──────────────────────── */
   :global(.repo-grid) {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -71,16 +307,8 @@ import RepoGrid from "../components/projects/RepoGrid";
     box-shadow: 0 8px 30px color-mix(in srgb, var(--color-primary) 12%, transparent);
   }
 
-  :global(.repo-header) {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  :global(.repo-icon) {
-    color: var(--color-text-muted);
-    flex-shrink: 0;
-  }
+  :global(.repo-header) { display: flex; align-items: center; gap: 0.5rem; }
+  :global(.repo-icon) { color: var(--color-text-muted); flex-shrink: 0; }
 
   :global(.repo-name) {
     font-size: 0.9rem;
@@ -101,11 +329,7 @@ import RepoGrid from "../components/projects/RepoGrid";
     overflow: hidden;
   }
 
-  :global(.repo-topics) {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-  }
+  :global(.repo-topics) { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 
   :global(.repo-topic) {
     font-size: 0.7rem;
@@ -134,12 +358,7 @@ import RepoGrid from "../components/projects/RepoGrid";
     color: var(--color-text-muted);
   }
 
-  :global(.lang-dot) {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+  :global(.lang-dot) { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
   :global(.repo-stat) {
     display: flex;
@@ -167,7 +386,6 @@ import RepoGrid from "../components/projects/RepoGrid";
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: 12px;
-    animation: shimmer 1.5s infinite;
     background: linear-gradient(
       90deg,
       var(--color-surface) 25%,
@@ -175,6 +393,7 @@ import RepoGrid from "../components/projects/RepoGrid";
       var(--color-surface) 75%
     );
     background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
   }
 
   :global(.repo-error),
@@ -190,5 +409,10 @@ import RepoGrid from "../components/projects/RepoGrid";
   @keyframes shimmer {
     0%   { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+  }
+
+  @media (max-width: 600px) {
+    .stats-bar { gap: 1rem; padding: 1rem; }
+    .stat-value { font-size: 1.2rem; }
   }
 </style>
