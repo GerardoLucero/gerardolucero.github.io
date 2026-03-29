@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../components/layout/BaseLayout.astro";
 import RepoGrid from "../components/projects/RepoGrid";
+import ContributionHeatmap from "../components/projects/ContributionHeatmap";
 
 const NPM_PACKAGES = [
   "calcula-rfc","calcula-curp","calculadora-isr","calculadora-nomina-mx",
@@ -36,45 +37,6 @@ try {
   if (res.ok) githubCommits = (await res.json()).total_count ?? 0;
 } catch (_) {}
 
-// ── Lines of code via GitHub code_frequency ────────────────────────────────
-let locLastMonth = 0;
-let locLastYear  = 0;
-let locAllTime   = 0;
-
-try {
-  const reposRes = await fetch(
-    "https://api.github.com/users/GerardoLucero/repos?per_page=100&type=owner",
-    { headers: { Accept: "application/vnd.github.v3+json" } }
-  );
-  if (reposRes.ok) {
-    const repos: Array<{ name: string; fork: boolean }> = await reposRes.json();
-    const ownRepos = repos.filter(r => !r.fork).map(r => r.name);
-    const now      = Date.now() / 1000;
-    const monthAgo = now - 30  * 86400;
-    const yearAgo  = now - 365 * 86400;
-
-    const CHUNK = 8;
-    for (let i = 0; i < ownRepos.length; i += CHUNK) {
-      const results = await Promise.allSettled(
-        ownRepos.slice(i, i + CHUNK).map(repo =>
-          fetch(
-            `https://api.github.com/repos/GerardoLucero/${repo}/stats/code_frequency`,
-            { headers: { Accept: "application/vnd.github.v3+json" } }
-          ).then(r => r.ok ? r.json() : [])
-        )
-      );
-      for (const r of results) {
-        if (r.status !== "fulfilled" || !Array.isArray(r.value)) continue;
-        for (const [ts, additions] of r.value as [number, number, number][]) {
-          if (!additions || additions <= 0) continue;
-          locAllTime += additions;
-          if (ts >= yearAgo)  locLastYear  += additions;
-          if (ts >= monthAgo) locLastMonth += additions;
-        }
-      }
-    }
-  }
-} catch (_) {}
 
 // ── Lines of code total via codetabs ──────────────────────────────────────
 let totalLinesOfCode = 0;
@@ -160,11 +122,6 @@ const statsBar = [
   { value: fmt(totalLinesOfCode) || "—",   label: "lines of code" },
 ];
 
-const locStats = [
-  { value: fmt(locLastMonth) || "—", label: "last 30 days" },
-  { value: fmt(locLastYear)  || "—", label: "last 12 months" },
-  { value: fmt(locAllTime)   || "—", label: "all time" },
-];
 ---
 
 <BaseLayout
@@ -193,59 +150,16 @@ const locStats = [
         ))}
       </div>
 
-      <!-- Lines of code breakdown -->
-      <div class="loc-bar animate-fade-in-up delay-150">
-        <span class="loc-title">Lines of code written</span>
-        <div class="loc-periods">
-          {locStats.map(s => (
-            <div class="loc-item">
-              <span class="loc-value">{s.value}</span>
-              <span class="loc-label">{s.label}</span>
-            </div>
-          ))}
+      <!-- Contributions heatmap (client-side) -->
+      <div class="contrib-section animate-fade-in-up delay-150">
+        <div class="contrib-header">
+          <span class="contrib-title">Contribution activity</span>
+          <a href="https://github.com/GerardoLucero" target="_blank" rel="noopener" class="contrib-link">
+            View on GitHub →
+          </a>
         </div>
+        <ContributionHeatmap username="GerardoLucero" client:load />
       </div>
-
-      <!-- Contributions heatmap -->
-      {weeks.length > 0 && (
-        <div class="contrib-section animate-fade-in-up delay-200">
-          <div class="contrib-header">
-            <span class="contrib-title">Contribution activity</span>
-            <a href="https://github.com/GerardoLucero" target="_blank" rel="noopener" class="contrib-link">
-              View on GitHub →
-            </a>
-          </div>
-          <div class="heatmap-scroll">
-            <div class="heatmap">
-              <!-- Month labels row -->
-              <div class="month-labels">
-                {weeks.map((_, i) => (
-                  <div class="month-label">{monthLabels[i]}</div>
-                ))}
-              </div>
-              <!-- Day grid -->
-              <div class="day-grid">
-                {weeks.map(week => (
-                  <div class="week-col">
-                    {week.days.map((day, di) => (
-                      <div
-                        class={`day-cell level-${day?.level ?? 0}`}
-                        title={day ? `${day.date}: ${day.count} contributions` : ""}
-                      />
-                    ))}
-                  </div>
-                ))}
-              </div>
-              <!-- Legend -->
-              <div class="heatmap-legend">
-                <span class="legend-label">Less</span>
-                {[0,1,2,3,4].map(l => <div class={`day-cell level-${l}`} />)}
-                <span class="legend-label">More</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <!-- GitHub repos -->
       <section class="section animate-fade-in-up delay-300">
@@ -312,41 +226,6 @@ const locStats = [
     letter-spacing: 0.05em;
   }
 
-  /* ── Lines of code bar ─────────────────────────────────── */
-  .loc-bar {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
-    border: 1px solid color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
-    border-radius: 12px;
-    padding: 1rem 1.75rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .loc-title {
-    font-size: 0.75rem;
-    font-family: var(--font-mono);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--color-text-muted);
-    white-space: nowrap;
-  }
-
-  .loc-periods { display: flex; gap: 2rem; flex-wrap: wrap; }
-  .loc-item    { display: flex; flex-direction: column; gap: 0.1rem; }
-
-  .loc-value {
-    font-size: 1.15rem;
-    font-weight: 700;
-    font-family: var(--font-mono);
-    color: var(--color-primary-light);
-    letter-spacing: -0.02em;
-  }
-
-  .loc-label { font-size: 0.68rem; color: var(--color-text-muted); font-family: var(--font-mono); }
-
   /* ── Contributions heatmap ─────────────────────────────── */
   .contrib-section {
     background: var(--color-surface);
@@ -380,52 +259,6 @@ const locStats = [
   }
   .contrib-link:hover { color: var(--color-primary-light); }
 
-  .heatmap-scroll { overflow-x: auto; padding-bottom: 0.5rem; }
-
-  .heatmap { display: flex; flex-direction: column; gap: 4px; min-width: max-content; }
-
-  .month-labels {
-    display: flex;
-    gap: 2px;
-    padding-left: 0;
-  }
-
-  .month-label {
-    width: 13px;
-    font-size: 0.6rem;
-    font-family: var(--font-mono);
-    color: var(--color-text-muted);
-    text-align: left;
-    white-space: nowrap;
-    overflow: visible;
-  }
-
-  .day-grid { display: flex; gap: 2px; }
-
-  .week-col { display: flex; flex-direction: column; gap: 2px; }
-
-  .day-cell {
-    width: 11px;
-    height: 11px;
-    border-radius: 2px;
-  }
-
-  /* Contribution level colors — matches dark theme */
-  .level-0 { background: var(--color-border); }
-  .level-1 { background: color-mix(in srgb, var(--color-primary) 30%, var(--color-surface)); }
-  .level-2 { background: color-mix(in srgb, var(--color-primary) 55%, var(--color-surface)); }
-  .level-3 { background: color-mix(in srgb, var(--color-primary) 80%, var(--color-surface)); }
-  .level-4 { background: var(--color-primary); }
-
-  .heatmap-legend {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    margin-top: 4px;
-    justify-content: flex-end;
-  }
-
-  .legend-label { font-size: 0.6rem; color: var(--color-text-muted); font-family: var(--font-mono); }
 
   /* ── Sections ──────────────────────────────────────────── */
   .section { margin-bottom: 3.5rem; }
