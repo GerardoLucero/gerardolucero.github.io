@@ -4,10 +4,10 @@ type Day = { date: string; count: number; level: 0 | 1 | 2 | 3 | 4 };
 type Week = { month: string; days: (Day | null)[] };
 
 const COLORS = [
-  "var(--color-border)",
-  "color-mix(in srgb, var(--color-primary) 25%, var(--color-surface))",
-  "color-mix(in srgb, var(--color-primary) 50%, var(--color-surface))",
-  "color-mix(in srgb, var(--color-primary) 75%, var(--color-surface))",
+  "color-mix(in srgb, var(--color-text-muted) 20%, var(--color-surface-light))",
+  "color-mix(in srgb, var(--color-primary) 30%, var(--color-surface))",
+  "color-mix(in srgb, var(--color-primary) 55%, var(--color-surface))",
+  "color-mix(in srgb, var(--color-primary) 80%, var(--color-surface))",
   "var(--color-primary)",
 ];
 
@@ -64,6 +64,13 @@ export default function ContributionHeatmap({ username }: { username: string }) 
 
   return (
     <div style="overflow-x:auto;padding-bottom:0.5rem">
+      {/* Total count */}
+      {total > 0 && (
+        <p style="font-size:0.8rem;color:var(--color-text-muted);font-family:var(--font-mono);margin:0 0 0.75rem">
+          <span style="color:var(--color-heading);font-weight:700">{total.toLocaleString()}</span>
+          {" "}contributions in the last year
+        </p>
+      )}
       <div style="min-width:max-content">
         {/* Month labels */}
         <div style="display:flex;gap:2px;margin-bottom:4px">
