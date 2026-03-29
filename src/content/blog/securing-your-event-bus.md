@@ -6,7 +6,7 @@ tags: ["kafka", "security", "devsecops", "java", "encryption", "distributed-syst
 draft: false
 ---
 
-At Consubanco — a regulated financial institution under CNBV and Banxico oversight — security on the event bus is not a nice-to-have. It's a compliance requirement with audit consequences. As a DevSecOps Engineer there, I work across the full security stack: SAST/DAST pipelines, policy-as-code, secret management, container hardening, and secure CI/CD for over 1,200 repositories. When I talk about Kafka security, I'm drawing from systems where a misconfigured ACL or an unencrypted field isn't just a code smell — it can trigger a regulatory finding.
+Most Kafka deployments have a security posture that looks roughly like this: TLS is on the checklist, ACLs are configured for the happy path, and someone made a note to revisit message-level encryption after launch. In regulated financial systems, that note never gets prioritized — until a misconfigured ACL or an unencrypted PII field surfaces in an audit finding.
 
 There's a pattern I see repeatedly in event-driven architectures: the team invests heavily in throughput, partitioning strategy, and consumer group tuning — and then ships an event bus where any service on the network can publish any message to any topic, messages travel unencrypted, and there's no way to tell whether a `PaymentProcessedEvent` was genuinely produced by the payment service or injected by something else.
 

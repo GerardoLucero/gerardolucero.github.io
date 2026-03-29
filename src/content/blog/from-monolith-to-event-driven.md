@@ -6,13 +6,7 @@ tags: ["event-driven-architecture", "migration", "microservices", "kafka", "arch
 draft: false
 ---
 
-I've been through this twice in very different contexts — and the pain is real both times.
-
-At Petco México, I was coordinating three squads across a system that touched over 100 stores. The monolith wasn't just a technical problem; it was a coordination problem. A schema change to support a new store format required sign-off across teams that barely shared a sprint board. Deployments became ceremonies. Incidents that originated in one bounded context cascaded into unrelated domains because everything ran in the same process.
-
-At Círculo de Crédito, as part of the Architecture Squad, the stakes were different — a credit bureau system where correctness and regulatory traceability were non-negotiable. There, the monolith's temporal coupling was the killer. A slow downstream call during a credit inquiry could block an entire transaction chain. Extracting payment and notification flows into event-driven services wasn't a trend we were chasing; it was a structural requirement to meet SLAs.
-
-Both experiences taught me the same thing: **the most dangerous words in software architecture are "we'll rewrite it."** The big-bang rewrite freezes the existing system, creates parallel maintenance burden, and delivers nothing to users for months or years while the team reimplements functionality that already works.
+**The most dangerous words in software architecture are "we'll rewrite it."** The big-bang rewrite freezes the existing system, creates parallel maintenance burden, and delivers nothing to users for months or years while the team reimplements functionality that already works. In production systems where downtime was not an option, I've seen this pattern fail repeatedly — and it almost always fails the same way.
 
 There's a better way: the Strangler Fig pattern, named after the strangler fig tree that grows around an existing tree until it eventually replaces it. You extract capabilities incrementally, domain by domain, while the existing system keeps running. The monolith shrinks; the event-driven architecture grows. Eventually, the monolith is gone — but users never experienced a migration.
 

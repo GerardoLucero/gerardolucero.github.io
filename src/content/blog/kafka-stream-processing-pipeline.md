@@ -6,11 +6,9 @@ tags: ["kafka", "kafka-streams", "java", "real-time", "stream-processing"]
 draft: false
 ---
 
-I attended Kafka Summit London 2023, and what stood out most wasn't the keynotes — it was the realization that most teams using Kafka were still writing raw consumer loops when they should have been using Kafka Streams. The conversations in the hallways confirmed it: people were reinventing stateful aggregations, managing offset commits by hand, and building fragile exactly-once logic from scratch.
+Most teams using Kafka are still writing raw consumer loops when they should be using Kafka Streams. The symptoms are familiar: stateful aggregations reinvented from scratch, offset commits managed by hand, fragile exactly-once logic bolted on after the fact. Batch works until it doesn't — when you need to react to an event within seconds, not hours, the architecture has to change.
 
-That context stuck with me. At Grupo Findep, I worked on systems processing 200 million transactions and 400,000 monthly loan applications. The volume forces you to think carefully about what happens at the boundary between ingestion and processing — where you need real-time guarantees, not just throughput. At Círculo de Crédito, batch systems processed 1 million records in under 3 minutes using AWS Glue and RDS. Batch works until it doesn't: when you need to react to an event within seconds, not hours, the architecture has to change.
-
-This post is the archetype I wish I'd had: a complete, production-oriented Kafka Streams pipeline in Java with Spring Boot, covering the four patterns that appear in every real analytics system.
+This post is the archetype for that transition: a complete, production-oriented Kafka Streams pipeline in Java with Spring Boot, covering the four patterns that appear in every real-time analytics system.
 
 ---
 
