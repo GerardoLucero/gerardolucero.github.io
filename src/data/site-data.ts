@@ -13,7 +13,7 @@ export const siteData = {
   highlights: [
     { value: "7+", label: "Years of experience" },
     { value: "1B+", label: "MXN transactions processed" },
-    { value: "1,200+", label: "Repos standardized" },
+    { value: "14", label: "npm packages published" },
   ],
   contact: {
     email: "luceroriosg@gmail.com",
