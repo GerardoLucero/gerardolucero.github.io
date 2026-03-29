@@ -7,7 +7,7 @@ const { personal, experience, education, skills, languages } = cvData;
 
 <BaseLayout
   title="CV"
-  description="Gerardo Lucero's CV — Solutions Architect & Technical Product Manager with 7+ years in distributed systems."
+  description="Gerardo Lucero's CV — Solutions Architect & DevSecOps Engineer with 7+ years in distributed systems, platform engineering, and fintech."
 >
   <div class="cv-page">
     <div class="container">
@@ -115,12 +115,13 @@ const { personal, experience, education, skills, languages } = cvData;
               {education.map((edu) => (
                 <div class="edu-item">
                   <div class="edu-icon">
-                    {edu.type === "degree" ? "🎓" : edu.type === "diploma" ? "📜" : "🎤"}
+                    {edu.type === "degree" ? "🎓" : edu.type === "diploma" ? "📜" : edu.type === "achievement" ? "🏆" : "🎤"}
                   </div>
                   <div class="edu-content">
                     <h4 class="edu-degree">{edu.degree}</h4>
                     <p class="edu-institution">{edu.institution}</p>
                     <p class="edu-meta">{edu.location} · {edu.year}</p>
+                    {edu.note && <p class="edu-note">{edu.note}</p>}
                   </div>
                 </div>
               ))}
@@ -396,6 +397,14 @@ const { personal, experience, education, skills, languages } = cvData;
     color: var(--color-text-muted);
     font-family: var(--font-mono);
     margin: 0;
+  }
+
+  .edu-note {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0.4rem 0 0;
+    font-style: italic;
   }
 
   /* ── Languages ──────────────────────── */

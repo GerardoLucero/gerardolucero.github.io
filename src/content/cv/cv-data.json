@@ -1,13 +1,13 @@
 {
   "personal": {
     "name": "Gerardo Lucero",
-    "title": "Technical Product Manager | Solutions Architect",
+    "title": "Solutions Architect | DevSecOps Engineer",
     "email": "luceroriosg@gmail.com",
     "phone": "+52 612-1419800",
     "location": "Mexico City, Mexico",
     "linkedin": "https://linkedin.com/in/luceroriosg",
     "github": "https://github.com/GerardoLucero",
-    "summary": "Over 7 years building distributed systems with Kafka on Kubernetes, implementing CI/CD pipelines in AWS and GCP, and ensuring end-to-end observability. Experienced in technical leadership across multiple teams, standardization of pipelines, and design of event-driven and hexagonal architectures. Focused on performance, reliability, and incremental delivery. Passionate about mentoring, cloud transformation, and technical excellence."
+    "summary": "Solutions Architect and DevSecOps Engineer with 7+ years building distributed systems across fintech and retail. Rare combination of platform architecture (Kafka, Kubernetes, IDP), security engineering (SAST/DAST, policy-as-code, container hardening), and technical product management. Track record of building Internal Developer Platforms, standardizing CI/CD pipelines at scale, and leading multi-team technical initiatives across AWS, GCP, and OpenShift. AI practitioner with applied experience in intelligent systems. Seeking remote roles in platform engineering, staff/principal engineering, or solutions architecture."
   },
   "experience": [
     {
@@ -17,32 +17,32 @@
       "startYear": 2024,
       "location": "Mexico City, Mexico",
       "type": "Contract",
-      "description": "Implemented secure CI/CD pipelines in GitHub Actions with SAST, DAST, quality gates, code coverage, and policy-as-code to ensure regulatory compliance. Built reusable libraries for multi-platform deployments across Kubernetes, Cloud Run, and on-premise environments. Applied container hardening, secret management, and dependency scanning, while defining 'golden paths' with templates, linters, and conventions that reduced defects and accelerated delivery times.",
+      "description": "Designed and implemented secure CI/CD infrastructure for a financial institution with 1,200+ repositories and 3,000+ build artifacts across 15+ technology stacks (Java, React, Salesforce, on-premise, mobile, and more). Built reusable pipeline libraries covering SAST, DAST, quality gates, policy-as-code, and container hardening — enabling consistent secure delivery across the entire engineering organization.",
       "highlights": [
-        "Secure CI/CD pipelines with SAST, DAST, quality gates and policy-as-code",
-        "Reusable deployment libraries for Kubernetes, Cloud Run and on-premise",
-        "Container hardening, secret management and dependency scanning",
-        "Golden path templates reducing defects and accelerating delivery"
+        "Standardized CI/CD pipelines across 1,200+ repositories and 3,000+ artifacts — 15+ build types including Java, React, Docker, Salesforce, Kubernetes, Cloud Run and on-premise",
+        "Reusable GitHub Actions libraries with SAST, DAST, quality gates, policy-as-code and secret management",
+        "Container hardening, dependency scanning and golden path templates reducing defects across multi-stack deployments",
+        "Security pipeline architecture ensuring regulatory compliance (CNBV/Banxico) for a regulated financial institution"
       ],
-      "tags": ["GitHub Actions", "SAST", "DAST", "Kubernetes", "Cloud Run", "DevSecOps"]
+      "tags": ["GitHub Actions", "SAST", "DAST", "Kubernetes", "Cloud Run", "DevSecOps", "Salesforce", "Policy-as-code"]
     },
     {
       "title": "Solutions Architect",
       "company": "Círculo de Crédito",
-      "period": "2024 – 2026",
+      "period": "2024 – Early 2026",
       "startYear": 2024,
       "location": "Mexico City, Mexico",
       "type": "Full-time",
-      "description": "Design and implement cloud-native solutions on AWS using ECS and Lambda, prioritizing scalability, resilience, and security. Built an Internal Developer Platform (IDP) for Kubernetes supporting multiple deployment stacks, enabling teams to self-serve infrastructure consistently. Implemented Karpenter for dynamic worker node optimization and Jenkins-based pipelines for standardized delivery. Proposed and led architecture initiatives including a generic batch orchestration framework with Feature Store integration and a centralized authentication layer. Strengthened observability through Dynatrace and drive the OpenShift transition strategy aligned with business roadmaps.",
+      "description": "Designed and implemented cloud-native solutions on AWS using ECS and Lambda, prioritizing scalability, resilience, and security. Built an Internal Developer Platform (IDP) for Kubernetes supporting multiple deployment stacks, enabling teams to self-serve infrastructure consistently. Implemented Karpenter for dynamic worker node optimization and Jenkins-based pipelines for standardized delivery. Proposed and led architecture initiatives including a generic batch orchestration framework with Feature Store integration and a centralized authentication layer. Strengthened observability through Dynatrace and led the OpenShift transition strategy aligned with business roadmaps.",
       "highlights": [
         "Internal Developer Platform (IDP) on Kubernetes — multi-stack deployments, golden paths and self-service infrastructure for engineering teams",
         "Karpenter + Jenkins: dynamic worker node scaling and standardized CI/CD pipelines",
-        "Batch orchestration architecture with Feature Store integration for ML workloads",
+        "Batch system processing 1M employment history records in under 3 minutes — AWS Glue Jobs + RDS queries with Feature Store integration for ML workloads",
         "Centralized authentication layer — unified identity and access control across services",
         "Dynatrace observability with SLO/SLI definition and distributed tracing across teams",
         "OpenShift transition strategy aligned with product and business roadmaps"
       ],
-      "tags": ["AWS", "Kubernetes", "IDP", "Karpenter", "Jenkins", "OpenShift", "Feature Store", "Dynatrace", "SLO/SLI"]
+      "tags": ["AWS", "Kubernetes", "IDP", "Karpenter", "Jenkins", "OpenShift", "AWS Glue", "Feature Store", "Dynatrace", "SLO/SLI"]
     },
     {
       "title": "Solutions Architect / Tech Lead Product",
@@ -51,13 +51,15 @@
       "startYear": 2023,
       "location": "Mexico City, Mexico",
       "type": "Full-time",
-      "description": "Led and managed end-to-end technology projects, coordinating multi-disciplinary teams to ensure successful delivery of scalable solutions. Oversaw the implementation of platforms across both on-premise and cloud environments, standardizing architecture and deployment practices.",
+      "description": "Led architecture and delivery across 3 multidisciplinary squads building customer-facing and internal systems for retail operations spanning 100+ stores. Collaborated with an external consultancy on solution design, standardizing infrastructure on AWS and virtualized environments. Introduced observability practices and proposed a microservices improvement initiative that reduced critical incident recovery times.",
       "highlights": [
-        "End-to-end technology project leadership across multiple squads",
-        "Platform implementation across on-premise and cloud environments",
-        "Architecture and deployment standardization"
+        "Coordinated 3 squads delivering customer-facing optimizations and internal admin systems (React, TypeScript, Node.js)",
+        "AWS API Gateway + Docker deployments on virtualized environments — standardized across retail operations in 100+ stores",
+        "Grafana implementation for real-time process monitoring and proactive incident detection",
+        "Critical incident resolution — restored production services and reduced recovery time for high-impact retail systems",
+        "Proposed microservices architecture improvement adopted by engineering leadership"
       ],
-      "tags": ["Architecture", "Tech Lead", "Cloud", "On-premise", "Project Management"]
+      "tags": ["React", "TypeScript", "Node.js", "Docker", "AWS", "API Gateway", "Grafana", "Microservices", "Tech Lead"]
     },
     {
       "title": "Technical Product Manager",
@@ -66,14 +68,18 @@
       "startYear": 2020,
       "location": "Mexico City, Mexico",
       "type": "Full-time",
-      "description": "Directed the development of a state-machine-based digital credit storage component used across three business units, significantly improving request processing times. Managed the full lifecycle of digital payments including Oxxo, cards, direct debits and third-party integrations. Led the creation of a fully digital mobile sales application built on Kafka and Kubernetes for mission-critical scalability.",
+      "description": "Led the end-to-end digital transformation of Grupo Findep's lending and collections platform across 3 business units, managing a 12-person team (9 engineers, 2 QA, 1 DevOps). Architected and delivered event-driven systems on Kafka processing 400K monthly credit applications and a payments circuit handling 200M transactions — over 1B MXN processed in a single quarter. Designed state machines for credit origination, collections strategy, and decisioning, while building the full digital sales and collections infrastructure from the ground up.",
       "highlights": [
-        "State-machine credit component deployed across 3 Grupo Findep companies",
-        "Full digital payments lifecycle: Oxxo, cards, direct debits, third parties",
-        "Fully digital mobile sales app from concept to production",
-        "Kafka + Kubernetes for mission-critical financial operations"
+        "400K monthly credit applications — event-driven origination platform on Kafka with state machines deployed across 3 business units",
+        "200M payment transactions — full payments circuit: Oxxo, PayNearMe, OpenPay, card payments, STP, bank direct debits (BBVA, Santander, HSBC)",
+        "1B MXN processed in 3 months across digital payment channels",
+        "Collections decision engine: 1M batch jobs processed in 40 seconds using Spark + Python",
+        "Led 12-person engineering team — credit origination, payments, collections, and mobile sales app (Android, Kafka, Firebase)",
+        "Credit bureau (Buró de Crédito) integration for national lending operations",
+        "Employee of the Year — consecutive awards, youngest team member to receive the recognition",
+        "Platform remains in production and served as the architectural foundation for the next-generation lending system"
       ],
-      "tags": ["Kafka", "Kubernetes", "Fintech", "Mobile", "Payments", "Product Management"]
+      "tags": ["Kafka", "Spring Boot", "Spring Batch", "Python", "Spark", "MongoDB", "PostgreSQL", "BigQuery", "Azure DevOps", "Fintech", "Payments", "Event-driven"]
     },
     {
       "title": "Tech Lead Engineer",
@@ -112,6 +118,14 @@
       "location": "La Paz, Mexico",
       "year": "2012 – 2017",
       "type": "degree"
+    },
+    {
+      "degree": "Robotics & Home Automation Competitions",
+      "institution": "Regional Academic Competitions",
+      "location": "La Paz, Mexico",
+      "year": "2010 – 2012",
+      "type": "achievement",
+      "note": "Competed in robotics and home automation (domotics) at regional level during high school — early foundation in embedded systems and hardware engineering."
     }
   ],
   "skills": {
@@ -141,7 +155,8 @@
       "Kubernetes",
       "OpenShift",
       "Karpenter",
-      "Cloud Run"
+      "Cloud Run",
+      "Terraform"
     ],
     "observability": [
       "Dynatrace",
@@ -154,17 +169,12 @@
       "Java",
       "Python",
       "JavaScript",
-      "TypeScript",
-      "PHP",
-      "VB.NET"
+      "TypeScript"
     ],
     "frameworks": [
       "Spring Boot",
       "Node.js",
-      "React.js",
-      "React Native",
-      "Angular",
-      "Electron"
+      "React.js"
     ],
     "data": [
       "Kafka",
@@ -177,7 +187,6 @@
     "tools": [
       "GitHub Actions",
       "Docker",
-      "Terraform",
       "SAST / DAST",
       "Arduino"
     ]
@@ -188,6 +197,6 @@
   ],
   "metadata": {
     "version": "1.0.0",
-    "lastUpdated": "2025-03-29"
+    "lastUpdated": "2026-03-29"
   }
 }
