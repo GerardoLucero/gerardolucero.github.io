@@ -6,16 +6,6 @@ tags: ["platform-engineering", "team-topologies", "devex", "architecture", "lead
 draft: false
 ---
 
-I've spent years watching Conway's Law operate in real systems — from the inside, not from a textbook.
-
-At Círculo de Crédito, I ran the Architecture Squad: a small team whose job was to enable seven or more engineering squads without becoming a bottleneck for any of them. We also built an Internal Developer Platform on Kubernetes with golden paths for deployment, observability, and secret management. That work put me in direct contact with every tension Team Topologies describes — who owns what, how teams coordinate, what the platform should and shouldn't decide for you.
-
-At Petco, I coordinated across three different teams to deliver platform and architecture capabilities. Different company, same underlying dynamics: team structure shapes the architecture whether you intend it to or not.
-
-This is my attempt to synthesize what I've observed and learned. Team Topologies gave me a language for things I had already lived. What follows is that framework, grounded in practice.
-
----
-
 In 1967, computer scientist Melvin Conway published an observation that turned out to be one of the most durable laws in software engineering: organizations that design systems are constrained to produce designs that are copies of their communication structures.
 
 This has been validated over and over in production. When you look at the architecture of a large software system and then look at the org chart of the company that built it, they look the same. If your three backend teams each own a part of the monolith and all share a database, your architecture will have three tightly coupled modules sharing a database. If your frontend team is entirely separate from your backend teams, your APIs will be poorly designed for the UIs they serve.

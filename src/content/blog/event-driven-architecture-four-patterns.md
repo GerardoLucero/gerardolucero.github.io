@@ -6,9 +6,9 @@ tags: ["event-driven-architecture", "kafka", "java", "microservices", "distribut
 draft: false
 ---
 
-I spent years building event-driven systems inside Mexican financial institutions — first at Círculo de Crédito (Mexico's credit bureau), coordinating across 7+ product and engineering teams, and later at Grupo Findep as lead of the Architecture Squad, where we processed roughly 400,000 loan applications per month and handled 200 million transactions. In both places, EDA wasn't a pattern we adopted for its elegance. We adopted it because synchronous systems were failing under the load and we needed audit trails that could survive a regulatory audit.
+Synchronous architectures fail in two predictable ways at scale: cascading outages when a downstream service is slow or unavailable, and audit gaps that collapse under regulatory scrutiny. Event-driven architecture solves both — but only if you apply the right patterns. Most EDA tutorials stop at Pub/Sub. In production financial systems, that's not enough.
 
-This post shares the four patterns that actually mattered in those environments. Not theory — implementations I've used in production with Spring Boot and Kafka, including the part most tutorials skip: security at the event layer.
+This post covers the four patterns that actually matter in high-compliance, high-throughput environments: Event Sourcing, Pub/Sub, CQRS, and secure event design. Not theory — implementations battle-tested with Spring Boot and Kafka, including the part most tutorials skip: security at the event layer.
 
 ---
 

@@ -6,13 +6,11 @@ tags: ["solid", "java", "microservices", "architecture", "clean-code"]
 draft: false
 ---
 
-Running Architecture Squad reviews at Círculo de Crédito meant sitting with teams and walking through their codebases — not to audit them, but to help them reason about what they'd built. One pattern came up constantly: teams that understood SOLID at the class level were still violating it at the service level. A developer who would never put email logic and audit logic in the same class would nonetheless maintain a monolithic "User Service" that six different teams deployed against. The principles they knew didn't feel relevant at that scale.
+There's a gap that shows up repeatedly in distributed systems work: engineers who apply SOLID rigorously at the class level abandon it entirely at the service level. A developer who would never put email logic and audit logic in the same class will nonetheless maintain a monolithic "User Service" that six different teams deploy against. The principles feel irrelevant at that scale.
 
-They were wrong — and I was in the same room having to explain why.
+They aren't. SOLID doesn't disappear at the service boundary — it scales up. The same principles apply, but the consequences of violating them are measured in outages, deployment trains, and teams that can't ship independently.
 
-Here's what I've learned operating distributed systems at scale: SOLID doesn't disappear at the service boundary. It scales up. The same principles apply — but the consequences of violating them are measured in outages, deployment trains, and teams that can't ship independently.
-
-Let me walk through each principle and show how it transforms when the unit of deployment is a service rather than a class.
+Here's how each principle transforms when the unit of deployment is a service rather than a class.
 
 ---
 

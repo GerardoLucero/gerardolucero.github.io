@@ -6,13 +6,13 @@ tags: ["microservices", "architecture", "distributed-systems", "java", "decoupli
 draft: false
 ---
 
-At Círculo de Crédito, I was reviewing an architecture where the credit inquiry flow touched seven services in a single synchronous chain: request intake, identity validation, bureau lookup, fraud scoring, response assembly, audit logging, and delivery. Seven teams. Seven deployment schedules. And a rule that said no one could deploy on Fridays because the chain was so fragile that any surprise rollout could bring down the entire credit inquiry pipeline.
+You have seven services. Seven teams. Seven deployment schedules. And a rule that says no one deploys on Fridays — because the chain is so fragile that any surprise rollout could bring down the entire pipeline.
 
-That's when it clicked for me. We hadn't built microservices. We'd built a distributed monolith — and it was harder to operate than the original thing.
+That's not microservices. That's a distributed monolith, and it's harder to operate than what you replaced.
 
-I led the Architecture Squad across 7+ engineering teams at that credit bureau, which meant I saw this pattern repeat across every domain: payments, credit checks, transaction processing, partner integrations. Teams would split services along organizational lines, give each one its own repo and pipeline, and then wire them all together with synchronous HTTP calls like beads on a string. The monolith was still there. It just had latency now.
+This pattern repeats across every domain in production systems at scale: payments, credit checks, transaction processing, partner integrations. Teams split services along organizational lines, give each one its own repo and pipeline, and wire them all together with synchronous HTTP calls like beads on a string. The monolith is still there. It just has latency now.
 
-This is the hidden cost of coupling. After operating production financial systems at scale, I've identified four types of coupling that survive most microservice migrations — and the specific strategies to eliminate each one.
+This is the hidden cost of coupling. There are four types of coupling that survive most microservice migrations — and specific strategies to eliminate each one.
 
 ---
 

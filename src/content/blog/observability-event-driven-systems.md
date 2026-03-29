@@ -6,11 +6,11 @@ tags: ["observability", "kafka", "distributed-systems", "slo", "dynatrace", "gra
 draft: false
 ---
 
-At Círculo de Crédito, I led the implementation of Dynatrace observability across a distributed credit bureau platform — defining SLOs and SLIs, configuring distributed tracing across microservices, and building dashboards that connected infrastructure signals to business outcomes. Before that, at Petco, I worked with Grafana and Prometheus to instrument event pipelines handling catalog and inventory events. In both cases, the hardest lessons didn't come from building the observability — they came from the incidents before it was complete.
+Event-driven systems fail quietly. In synchronous request-response architectures, a broken dependency surfaces immediately — the caller gets an error and the trace is complete. In production event-driven systems, a consumer can fall silently behind: no exception, no alert, just lag accumulating in a topic until a business metric finally drops and someone starts asking questions.
 
-I remember one incident at Círculo where a consumer started silently falling behind. No error. No exception. Just lag accumulating slowly in a topic that fed downstream credit report generation. By the time we noticed — because a business metric dropped — the queue had grown to tens of thousands of messages. The root cause investigation took the better part of a day because the logs had no correlation IDs and traces stopped at the Kafka `send()` call. The event had effectively disappeared into the broker.
+By the time the queue is tens of thousands of messages deep, the investigation becomes slow and expensive — especially when logs carry no correlation IDs and distributed traces stop at the broker boundary. The event effectively disappears.
 
-That incident, and others like it, shaped how I think about observability for event-driven systems. This post is about building it in ways that answer the questions that actually matter — during an incident and during the quiet periods when you're trying to understand if your system is healthy.
+That failure mode is solvable, but it requires treating observability as a first-class design concern rather than a dashboard you add after the first incident. This post covers how to build it: which signals actually matter, how to propagate traces across event boundaries, and how to design SLOs for async systems where the usual latency model doesn't apply.
 
 ---
 
