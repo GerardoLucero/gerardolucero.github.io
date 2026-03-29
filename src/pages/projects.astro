@@ -3,62 +3,40 @@ import BaseLayout from "../components/layout/BaseLayout.astro";
 import RepoGrid from "../components/projects/RepoGrid";
 
 const NPM_PACKAGES = [
-  { name: "calcula-rfc",           desc: "RFC calculator with homoclave for individuals" },
-  { name: "calcula-curp",          desc: "CURP calculator with verifier digit" },
-  { name: "calculadora-isr",       desc: "Mexican ISR tax calculator with updated rates" },
-  { name: "calculadora-nomina-mx", desc: "Payroll calculator with IMSS, ISR & Infonavit" },
-  { name: "calculadora-imss",      desc: "IMSS contribution calculator 2024" },
-  { name: "calculadora-iva",       desc: "IVA calculator for 16%, 8% and 0% rates" },
-  { name: "mx-bancos",             desc: "Mexican banks catalog with CLABE codes" },
-  { name: "mx-feriados",           desc: "Mexican official holidays with auto calculations" },
-  { name: "mx-nombres",            desc: "Mexican names database with statistics" },
-  { name: "mx-codigos-postales",   desc: "Postal codes with geolocation and search" },
-  { name: "validador-fiscal-mx",   desc: "RFC, CURP and NSS validator" },
-  { name: "validador-clabe",       desc: "CLABE validator, generator and info extractor" },
-  { name: "calendario-fiscal-mx",  desc: "SAT fiscal obligations calendar with deadlines" },
-  { name: "generador-datos-mx",    desc: "Realistic Mexican test data generator" },
+  "calcula-rfc","calcula-curp","calculadora-isr","calculadora-nomina-mx",
+  "calculadora-imss","calculadora-iva","mx-bancos","mx-feriados",
+  "mx-nombres","mx-codigos-postales","validador-fiscal-mx","validador-clabe",
+  "calendario-fiscal-mx","generador-datos-mx",
 ];
 
 // ── npm downloads (build-time) ─────────────────────────────────────────────
-let npmStats: Record<string, number> = {};
 let totalNpmDownloads = 0;
 
 try {
-  const list = NPM_PACKAGES.map(p => p.name).join(",");
   const res = await fetch(
-    `https://api.npmjs.org/downloads/point/last-month/${list}`
+    `https://api.npmjs.org/downloads/point/last-month/${NPM_PACKAGES.join(",")}`
   );
   if (res.ok) {
     const data = await res.json();
     for (const pkg of NPM_PACKAGES) {
-      const count: number = data[pkg.name]?.downloads ?? 0;
-      npmStats[pkg.name] = count;
-      totalNpmDownloads += count;
+      totalNpmDownloads += data[pkg]?.downloads ?? 0;
     }
   }
-} catch (_) { /* fail silently on build */ }
+} catch (_) {}
 
-// ── GitHub stats (build-time) ─────────────────────────────────────────────
-let githubRepos = 0;
+// ── GitHub commits (build-time) ────────────────────────────────────────────
 let githubCommits = 0;
 
 try {
   const year = new Date().getFullYear();
-  const [userRes, commitsRes] = await Promise.all([
-    fetch("https://api.github.com/users/GerardoLucero", {
-      headers: { Accept: "application/vnd.github.v3+json" },
-    }),
-    fetch(
-      `https://api.github.com/search/commits?q=author:GerardoLucero+committer-date:>${year}-01-01&per_page=1`,
-      { headers: { Accept: "application/vnd.github.cloak-preview" } }
-    ),
-  ]);
-  if (userRes.ok)    githubRepos   = (await userRes.json()).public_repos ?? 0;
-  if (commitsRes.ok) githubCommits = (await commitsRes.json()).total_count ?? 0;
-} catch (_) { /* fail silently on build */ }
+  const res = await fetch(
+    `https://api.github.com/search/commits?q=author:GerardoLucero+committer-date:>${year}-01-01&per_page=1`,
+    { headers: { Accept: "application/vnd.github.cloak-preview" } }
+  );
+  if (res.ok) githubCommits = (await res.json()).total_count ?? 0;
+} catch (_) {}
 
-// ── Lines of code via GitHub code_frequency (build-time) ──────────────────
-// code_frequency returns [[weekTimestamp, additions, deletions], ...]
+// ── Lines of code via GitHub code_frequency ────────────────────────────────
 let locLastMonth = 0;
 let locLastYear  = 0;
 let locAllTime   = 0;
@@ -71,25 +49,23 @@ try {
   if (reposRes.ok) {
     const repos: Array<{ name: string; fork: boolean }> = await reposRes.json();
     const ownRepos = repos.filter(r => !r.fork).map(r => r.name);
-
-    const now        = Date.now() / 1000; // unix seconds
-    const monthAgo   = now - 30  * 24 * 3600;
-    const yearAgo    = now - 365 * 24 * 3600;
+    const now      = Date.now() / 1000;
+    const monthAgo = now - 30  * 86400;
+    const yearAgo  = now - 365 * 86400;
 
     const CHUNK = 8;
     for (let i = 0; i < ownRepos.length; i += CHUNK) {
-      const chunk = ownRepos.slice(i, i + CHUNK);
       const results = await Promise.allSettled(
-        chunk.map(repo =>
+        ownRepos.slice(i, i + CHUNK).map(repo =>
           fetch(
             `https://api.github.com/repos/GerardoLucero/${repo}/stats/code_frequency`,
             { headers: { Accept: "application/vnd.github.v3+json" } }
           ).then(r => r.ok ? r.json() : [])
         )
       );
-      for (const result of results) {
-        if (result.status !== "fulfilled" || !Array.isArray(result.value)) continue;
-        for (const [ts, additions] of result.value as [number, number, number][]) {
+      for (const r of results) {
+        if (r.status !== "fulfilled" || !Array.isArray(r.value)) continue;
+        for (const [ts, additions] of r.value as [number, number, number][]) {
           if (!additions || additions <= 0) continue;
           locAllTime += additions;
           if (ts >= yearAgo)  locLastYear  += additions;
@@ -98,9 +74,9 @@ try {
       }
     }
   }
-} catch (_) { /* fail silently on build */ }
+} catch (_) {}
 
-// ── Lines of code via codetabs — total snapshot ────────────────────────────
+// ── Lines of code total via codetabs ──────────────────────────────────────
 let totalLinesOfCode = 0;
 
 try {
@@ -113,22 +89,63 @@ try {
     const ownRepos = repos.filter(r => !r.fork).map(r => r.name);
     const CHUNK = 10;
     for (let i = 0; i < ownRepos.length; i += CHUNK) {
-      const chunk = ownRepos.slice(i, i + CHUNK);
       const results = await Promise.allSettled(
-        chunk.map(repo =>
+        ownRepos.slice(i, i + CHUNK).map(repo =>
           fetch(`https://api.codetabs.com/v1/loc?github=GerardoLucero/${repo}`)
             .then(r => r.ok ? r.json() : [])
         )
       );
-      for (const result of results) {
-        if (result.status === "fulfilled" && Array.isArray(result.value)) {
-          const total = result.value.find((l: { language: string; linesOfCode: number }) => l.language === "Total");
+      for (const r of results) {
+        if (r.status === "fulfilled" && Array.isArray(r.value)) {
+          const total = r.value.find((l: { language: string; linesOfCode: number }) => l.language === "Total");
           if (total?.linesOfCode) totalLinesOfCode += total.linesOfCode;
         }
       }
     }
   }
-} catch (_) { /* fail silently on build */ }
+} catch (_) {}
+
+// ── GitHub contributions heatmap ──────────────────────────────────────────
+type Contribution = { date: string; count: number; level: 0|1|2|3|4 };
+let contributions: Contribution[] = [];
+
+try {
+  const res = await fetch(
+    "https://github-contributions-api.jogruber.de/v4/GerardoLucero?y=last"
+  );
+  if (res.ok) {
+    const data = await res.json();
+    contributions = data.contributions ?? [];
+  }
+} catch (_) {}
+
+// Build week columns for the heatmap
+type Week = { month: string; days: (Contribution | null)[] };
+const weeks: Week[] = [];
+
+if (contributions.length > 0) {
+  // Pad start so first day aligns to correct weekday (0=Sun)
+  const firstDow = new Date(contributions[0].date).getDay();
+  const padded: (Contribution | null)[] = [
+    ...Array(firstDow).fill(null),
+    ...contributions,
+  ];
+  for (let i = 0; i < padded.length; i += 7) {
+    const days = padded.slice(i, i + 7);
+    while (days.length < 7) days.push(null);
+    const firstReal = days.find(d => d !== null);
+    const month = firstReal
+      ? new Date(firstReal.date).toLocaleString("en-US", { month: "short" })
+      : "";
+    weeks.push({ month, days });
+  }
+}
+
+// Month labels: show label only on first week of each month
+const monthLabels = weeks.map((w, i) => {
+  if (i === 0) return w.month;
+  return weeks[i - 1].month !== w.month ? w.month : "";
+});
 
 function fmt(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -138,9 +155,9 @@ function fmt(n: number): string {
 
 const statsBar = [
   { value: fmt(totalNpmDownloads) || "—", label: "npm downloads / month" },
-  { value: NPM_PACKAGES.length.toString(),  label: "npm packages" },
-  { value: fmt(githubCommits) || "—",       label: `commits ${new Date().getFullYear()}` },
-  { value: fmt(totalLinesOfCode) || "—",    label: "lines of code (total)" },
+  { value: NPM_PACKAGES.length.toString(), label: "npm packages" },
+  { value: fmt(githubCommits) || "—",      label: `commits ${new Date().getFullYear()}` },
+  { value: fmt(totalLinesOfCode) || "—",   label: "lines of code" },
 ];
 
 const locStats = [
@@ -189,38 +206,46 @@ const locStats = [
         </div>
       </div>
 
-      <!-- npm packages -->
-      <section class="section animate-fade-in-up delay-200">
-        <h2 class="section-title">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-            <path d="M0 0v16h16V0H0zm14 14H8V8h2v4h2V8h2v6zm-8 0H2V2h12v2H6v10z"/>
-          </svg>
-          npm packages
-        </h2>
-        <p class="section-desc">
-          14 utilities for the Mexican ecosystem — fiscal, financial, and data tooling.
-        </p>
-        <div class="npm-grid">
-          {NPM_PACKAGES.map(pkg => (
-            <a
-              href={`https://www.npmjs.com/package/${pkg.name}`}
-              target="_blank"
-              rel="noopener"
-              class="npm-card"
-            >
-              <div class="npm-header">
-                <span class="npm-name">{pkg.name}</span>
-                {npmStats[pkg.name] > 0 && (
-                  <span class="npm-downloads">
-                    ↓ {fmt(npmStats[pkg.name])}/mo
-                  </span>
-                )}
-              </div>
-              <p class="npm-desc">{pkg.desc}</p>
+      <!-- Contributions heatmap -->
+      {weeks.length > 0 && (
+        <div class="contrib-section animate-fade-in-up delay-200">
+          <div class="contrib-header">
+            <span class="contrib-title">Contribution activity</span>
+            <a href="https://github.com/GerardoLucero" target="_blank" rel="noopener" class="contrib-link">
+              View on GitHub →
             </a>
-          ))}
+          </div>
+          <div class="heatmap-scroll">
+            <div class="heatmap">
+              <!-- Month labels row -->
+              <div class="month-labels">
+                {weeks.map((_, i) => (
+                  <div class="month-label">{monthLabels[i]}</div>
+                ))}
+              </div>
+              <!-- Day grid -->
+              <div class="day-grid">
+                {weeks.map(week => (
+                  <div class="week-col">
+                    {week.days.map((day, di) => (
+                      <div
+                        class={`day-cell level-${day?.level ?? 0}`}
+                        title={day ? `${day.date}: ${day.count} contributions` : ""}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <!-- Legend -->
+              <div class="heatmap-legend">
+                <span class="legend-label">Less</span>
+                {[0,1,2,3,4].map(l => <div class={`day-cell level-${l}`} />)}
+                <span class="legend-label">More</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
+      )}
 
       <!-- GitHub repos -->
       <section class="section animate-fade-in-up delay-300">
@@ -254,11 +279,7 @@ const locStats = [
     color: var(--color-text-muted);
     margin: 0;
   }
-
-  .page-subtitle a {
-    color: var(--color-primary-light);
-    text-decoration: none;
-  }
+  .page-subtitle a { color: var(--color-primary-light); text-decoration: none; }
   .page-subtitle a:hover { text-decoration: underline; }
 
   /* ── Stats bar ─────────────────────────────────────────── */
@@ -270,15 +291,10 @@ const locStats = [
     border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 1.25rem 1.75rem;
-    margin-bottom: 3rem;
+    margin-bottom: 1rem;
   }
 
-  .stat-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    min-width: 100px;
-  }
+  .stat-item { display: flex; flex-direction: column; gap: 0.2rem; min-width: 100px; }
 
   .stat-value {
     font-size: 1.4rem;
@@ -306,7 +322,7 @@ const locStats = [
     border: 1px solid color-mix(in srgb, var(--color-primary) 20%, var(--color-border));
     border-radius: 12px;
     padding: 1rem 1.75rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .loc-title {
@@ -318,17 +334,8 @@ const locStats = [
     white-space: nowrap;
   }
 
-  .loc-periods {
-    display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .loc-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-  }
+  .loc-periods { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .loc-item    { display: flex; flex-direction: column; gap: 0.1rem; }
 
   .loc-value {
     font-size: 1.15rem;
@@ -338,11 +345,87 @@ const locStats = [
     letter-spacing: -0.02em;
   }
 
-  .loc-label {
-    font-size: 0.68rem;
-    color: var(--color-text-muted);
-    font-family: var(--font-mono);
+  .loc-label { font-size: 0.68rem; color: var(--color-text-muted); font-family: var(--font-mono); }
+
+  /* ── Contributions heatmap ─────────────────────────────── */
+  .contrib-section {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2.5rem;
   }
+
+  .contrib-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .contrib-title {
+    font-size: 0.8rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+  }
+
+  .contrib-link {
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .contrib-link:hover { color: var(--color-primary-light); }
+
+  .heatmap-scroll { overflow-x: auto; padding-bottom: 0.5rem; }
+
+  .heatmap { display: flex; flex-direction: column; gap: 4px; min-width: max-content; }
+
+  .month-labels {
+    display: flex;
+    gap: 2px;
+    padding-left: 0;
+  }
+
+  .month-label {
+    width: 13px;
+    font-size: 0.6rem;
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+    text-align: left;
+    white-space: nowrap;
+    overflow: visible;
+  }
+
+  .day-grid { display: flex; gap: 2px; }
+
+  .week-col { display: flex; flex-direction: column; gap: 2px; }
+
+  .day-cell {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+  }
+
+  /* Contribution level colors — matches dark theme */
+  .level-0 { background: var(--color-border); }
+  .level-1 { background: color-mix(in srgb, var(--color-primary) 30%, var(--color-surface)); }
+  .level-2 { background: color-mix(in srgb, var(--color-primary) 55%, var(--color-surface)); }
+  .level-3 { background: color-mix(in srgb, var(--color-primary) 80%, var(--color-surface)); }
+  .level-4 { background: var(--color-primary); }
+
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 4px;
+    justify-content: flex-end;
+  }
+
+  .legend-label { font-size: 0.6rem; color: var(--color-text-muted); font-family: var(--font-mono); }
 
   /* ── Sections ──────────────────────────────────────────── */
   .section { margin-bottom: 3.5rem; }
@@ -354,73 +437,10 @@ const locStats = [
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--color-heading);
-    margin: 0 0 0.5rem;
+    margin: 0 0 1rem;
   }
 
   .section-title svg { color: var(--color-text-muted); flex-shrink: 0; }
-
-  .section-desc {
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    margin: 0 0 1.25rem;
-  }
-
-  /* ── npm grid ──────────────────────────────────────────── */
-  .npm-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-  }
-
-  .npm-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-    text-decoration: none;
-    transition: border-color 0.2s, transform 0.2s;
-  }
-
-  .npm-card:hover {
-    border-color: var(--color-primary);
-    transform: translateY(-2px);
-  }
-
-  .npm-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .npm-name {
-    font-size: 0.85rem;
-    font-weight: 600;
-    font-family: var(--font-mono);
-    color: var(--color-primary-light);
-  }
-
-  .npm-downloads {
-    font-size: 0.7rem;
-    font-family: var(--font-mono);
-    color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface-light));
-    border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
-    border-radius: 4px;
-    padding: 0.1rem 0.4rem;
-    white-space: nowrap;
-  }
-
-  .npm-desc {
-    font-size: 0.78rem;
-    color: var(--color-text-muted);
-    line-height: 1.5;
-    margin: 0;
-  }
 
   /* ── Repo grid (Preact component) ──────────────────────── */
   :global(.repo-grid) {
@@ -490,54 +510,23 @@ const locStats = [
     border-top: 1px solid var(--color-border);
   }
 
-  :global(.repo-lang) {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-  }
-
+  :global(.repo-lang) { display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: var(--color-text-muted); }
   :global(.lang-dot) { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  :global(.repo-stat) { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--color-text-muted); }
+  :global(.repo-updated) { font-size: 0.7rem; color: var(--color-text-muted); font-family: var(--font-mono); margin-left: auto; }
 
-  :global(.repo-stat) {
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
-  }
-
-  :global(.repo-updated) {
-    font-size: 0.7rem;
-    color: var(--color-text-muted);
-    font-family: var(--font-mono);
-    margin-left: auto;
-  }
-
-  :global(.loading-grid) {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.25rem;
-  }
+  :global(.loading-grid) { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }
 
   :global(.repo-skeleton) {
     height: 160px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
     border-radius: 12px;
-    background: linear-gradient(
-      90deg,
-      var(--color-surface) 25%,
-      var(--color-surface-light) 50%,
-      var(--color-surface) 75%
-    );
+    background: linear-gradient(90deg, var(--color-surface) 25%, var(--color-surface-light) 50%, var(--color-surface) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
+    border: 1px solid var(--color-border);
   }
 
-  :global(.repo-error),
-  :global(.repo-empty) {
+  :global(.repo-error), :global(.repo-empty) {
     padding: 3rem;
     text-align: center;
     color: var(--color-text-muted);
@@ -554,5 +543,6 @@ const locStats = [
   @media (max-width: 600px) {
     .stats-bar { gap: 1rem; padding: 1rem; }
     .stat-value { font-size: 1.2rem; }
+    .loc-bar { padding: 0.75rem 1rem; }
   }
 </style>
