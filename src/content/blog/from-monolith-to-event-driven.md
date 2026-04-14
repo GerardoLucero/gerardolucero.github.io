@@ -34,41 +34,22 @@ The event-driven migration is fundamentally a decoupling exercise. You're not ju
 
 Before explaining the mechanics, here's the shape of the migration. Most teams underestimate how incremental this is:
 
-```
-STRANGLER FIG MIGRATION PATTERN
-═══════════════════════════════
-
-Phase 1: Monolith + events in parallel
-┌─────────────────────────────────────┐
-│           MONOLITH                  │         ┌──────────────┐
-│  Orders ──► Payments ──► Inventory  │──events─► New Service  │
-│                                     │         │ (shadow mode)│
-└─────────────────────────────────────┘         └──────────────┘
-
-The monolith keeps running unchanged. A new service is built to consume
-the events it now publishes — but it doesn't handle real traffic yet.
-This is the shadow mode phase: validate correctness before routing traffic.
-
-Phase 2: Route traffic to new service
-┌────────────────────────┐    ┌──────────────────────────────┐
-│  MONOLITH (shrinking)  │    │  NEW SERVICES (growing)       │
-│  [Orders] [Inventory]  │    │  [Payments] ──► Kafka ──►    │
-│                        │    │  [Notifications]              │
-└────────────────────────┘    └──────────────────────────────┘
-
-Traffic is routed to the new service via API gateway or feature flag.
-The monolith still exists but no longer owns the extracted domain.
-Both run in parallel during the stabilization window.
-
-Phase 3: Monolith is gone
-                              ┌──────────────────────────────┐
-                              │  EVENT-DRIVEN ARCHITECTURE   │
-                              │  [Orders] [Payments]         │
-                              │  [Inventory] [Notifications] │
-                              └──────────────────────────────┘
-
-The monolith has been fully strangled. Each domain is an independent
-service, communicating through events. No downtime, no big bang.
+```mermaid
+flowchart TD
+    subgraph p1["Phase 1 — Shadow Mode"]
+        direction LR
+        M1["MONOLITH\nOrders → Payments → Inventory"] -->|"events"| NS["New Service\n(shadow mode, no real traffic)"]
+    end
+    subgraph p2["Phase 2 — Traffic Split"]
+        direction LR
+        M2["MONOLITH (shrinking)\nOrders · Inventory"]
+        NW["NEW SERVICES (growing)\nPayments → Kafka → Notifications"]
+    end
+    subgraph p3["Phase 3 — Complete"]
+        direction LR
+        EDA["EVENT-DRIVEN ARCHITECTURE\nOrders · Payments · Inventory · Notifications\n(each domain independent, communicating through events)"]
+    end
+    p1 --> p2 --> p3
 ```
 
 The key insight: at no point do users experience a migration. The system is always running.

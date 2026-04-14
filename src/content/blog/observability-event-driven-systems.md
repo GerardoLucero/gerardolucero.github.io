@@ -30,28 +30,22 @@ You need both. But monitoring without observability means you know there's a fir
 
 In an event-driven system, logs, metrics, and traces don't operate independently — they need to be correlated across the entire event pipeline. Here's how they fit together:
 
-```
-OBSERVABILITY IN EVENT-DRIVEN SYSTEMS
-══════════════════════════════════════
-
-Producer Service                Kafka Broker                Consumer Service
-─────────────────               ──────────────              ─────────────────
-Span: process-order             Topic: order-events         Span: process-payment
-  correlationId: abc                  │                       correlationId: abc
-  traceId: xyz          ─────────────►│─────────────────────► traceId: xyz
-       │                              │                             │
-  Metric: orders.created         Metric: lag                  Metric: payments.success
-  Log: {"event":"ORDER_CREATED"}  Metric: throughput         Log: {"event":"PAYMENT_DONE"}
-       │                              │                             │
-       └──────────────────────────────┴─────────────────────────────┘
-                                      │
-                              Grafana/Dynatrace
-                         ─────────────────────────
-                         │ Dashboard:              │
-                         │ - Business: orders/min  │
-                         │ - SLO: lag < 1000       │
-                         │ - Trace: end-to-end     │
-                         └─────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph producer["Producer Service"]
+        P["Span: process-order\ncorrelationId: abc · traceId: xyz\nMetric: orders.created\nLog: ORDER_CREATED"]
+    end
+    subgraph broker["Kafka Broker"]
+        KB["Topic: order-events\nMetric: lag\nMetric: throughput"]
+    end
+    subgraph consumer["Consumer Service"]
+        C["Span: process-payment\ncorrelationId: abc · traceId: xyz\nMetric: payments.success\nLog: PAYMENT_DONE"]
+    end
+    subgraph dashboard["Grafana / Dynatrace"]
+        D["Business: orders/min\nSLO: lag < 1000\nTrace: end-to-end"]
+    end
+    producer -->|"traceId propagated"| broker -->|"traceId propagated"| consumer
+    producer & broker & consumer --> dashboard
 ```
 
 The broker is not a black box — it's an observable node. Consumer lag and throughput metrics from the broker, combined with traces that cross service boundaries and logs that carry shared IDs, are what make the complete picture possible.

@@ -157,23 +157,20 @@ When your endpoint blocks a thread waiting for multiple downstream services to r
 
 This is the pattern that killed response times on our transaction processing flow. A credit inquiry that needed fraud scoring, identity validation, and bureau lookup would do them one by one: wait for fraud (400ms), then identity (300ms), then bureau (600ms). Total: 1.3 seconds. All three could have run simultaneously. The sequential wait was artificial — pure synchronization coupling.
 
-```
-SYNCHRONIZATION COUPLING (bad):
-
-CreditInquiry ──► FraudScoring (400ms)
-                       │
-                       └──► IdentityCheck (300ms)
-                                  │
-                                  └──► BureauLookup (600ms)
-                                            │
-                                       total: 1.3s
-
-SYNCHRONIZATION DECOUPLING (good):
-
-                  ┌──► FraudScoring (400ms) ──┐
-CreditInquiry ────┼──► IdentityCheck (300ms) ─┼──► allOf() ──► response
-                  └──► BureauLookup (600ms) ──┘
-                                            total: 600ms (max, not sum)
+```mermaid
+flowchart LR
+    subgraph bad["❌ Synchronization Coupling — 1.3s total"]
+        CI1["CreditInquiry"] --> FS1["FraudScoring\n400ms"]
+        FS1 --> IC1["IdentityCheck\n300ms"]
+        IC1 --> BL1["BureauLookup\n600ms"]
+        BL1 --> R1["response\n1.3s"]
+    end
+    subgraph good["✅ Synchronization Decoupling — 600ms total"]
+        CI2["CreditInquiry"] --> FS2["FraudScoring\n400ms"]
+        CI2 --> IC2["IdentityCheck\n300ms"]
+        CI2 --> BL2["BureauLookup\n600ms"]
+        FS2 & IC2 & BL2 --> AO["allOf()"] --> R2["response\n600ms (max, not sum)"]
+    end
 ```
 
 Sequential blocking calls compound latency and exhaust thread pools under load. In a high-throughput financial system, this is where you hit the ceiling first.

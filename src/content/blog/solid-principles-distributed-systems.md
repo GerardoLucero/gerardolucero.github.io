@@ -18,23 +18,13 @@ Here's how each principle transforms when the unit of deployment is a service ra
 
 Before going deep on each principle, here's the full mapping at a glance:
 
-```
-SOLID: Class → Service mapping
-
-SRP: One class = one reason to change
-  → One service = one business domain
-
-OCP: Extend without modifying
-  → New consumers don't require producer changes
-
-LSP: Subtypes must be substitutable
-  → New event schema versions must be backward-compatible
-
-ISP: Don't force clients to depend on unused methods
-  → CQRS: separate read and write APIs
-
-DIP: Depend on abstractions, not implementations
-  → Domain logic must not import Kafka/AWS directly
+```mermaid
+flowchart LR
+    SRP["SRP\nOne class =\none reason to change"] --> S1["One service =\none business domain"]
+    OCP["OCP\nExtend without modifying"] --> S2["New consumers\ndon't require\nproducer changes"]
+    LSP["LSP\nSubtypes must be\nsubstitutable"] --> S3["New event schema versions\nmust be backward-compatible"]
+    ISP["ISP\nNo unused\ndependencies forced"] --> S4["CQRS: separate\nread and write APIs"]
+    DIP["DIP\nDepend on\nabstractions"] --> S5["Domain logic must not\nimport Kafka/AWS directly"]
 ```
 
 The rest of this article unpacks each one with code examples and the real symptoms to look for.
