@@ -18,7 +18,7 @@ This is a playbook for how to do that in practice.
 
 Before the migration strategy, understand what actually breaks in a monolith at scale. It's not usually throughput — many monoliths handle impressive load. What breaks is:
 
-**Deployment coupling.** A bug in the notifications module forces a full deployment that includes the payment module. A schema change for reporting requires coordination across every team. Deployment frequency plummets because every release is a coordinated event. At Petco, this was the most visible symptom: a change to how store promotions were applied could delay a fix to the checkout flow by a week.
+**Deployment coupling.** A bug in the notifications module forces a full deployment that includes the payment module. A schema change for reporting requires coordination across every team. Deployment frequency plummets because every release is a coordinated event. At a nationwide retail chain, this was the most visible symptom: a change to how store promotions were applied could delay a fix to the checkout flow by a week.
 
 **Temporal coupling.** All operations happen in a single transaction. A slow inventory check blocks the payment confirmation. A third-party payment gateway that hangs takes down the entire checkout flow — including features that have nothing to do with payments.
 
@@ -373,9 +373,9 @@ Resist the pressure to accelerate this timeline. The "30-day no rollback" criter
 
 The technical implementation is the easy part. What makes the migration hard:
 
-**Schema evolution.** Once consumers depend on your event schema, changing it requires backward-compatible evolution. Add fields; never remove them. Version your event types. At Círculo de Crédito, where downstream consumers included regulatory systems, breaking a schema was not a "fix it Monday" problem — it was a compliance incident.
+**Schema evolution.** Once consumers depend on your event schema, changing it requires backward-compatible evolution. Add fields; never remove them. Version your event types. In regulated environments where downstream consumers include regulatory systems, breaking a schema was not a "fix it Monday" problem — it was a compliance incident.
 
-**Team readiness.** A team that hasn't operated a production service before will struggle with the "you build it, you run it" model. Invest in enabling work before extraction. At Petco, we spent two sprints on runbooks, alerting setup, and on-call shadowing before a squad took ownership of their first extracted service. That investment paid for itself in the first incident.
+**Team readiness.** A team that hasn't operated a production service before will struggle with the "you build it, you run it" model. Invest in enabling work before extraction. At that same retail company, we spent two sprints on runbooks, alerting setup, and on-call shadowing before a squad took ownership of their first extracted service. That investment paid for itself in the first incident.
 
 **Testing the seam.** Integration tests for the Strangler Fig boundary — where the monolith hands off to the new service — are surprisingly hard to write. Invest in contract testing (Pact or similar) early. The shadow mode phase is also your best opportunity to build confidence: if the shadow service produces the same results as the monolith across 2 weeks of real production traffic, that's stronger evidence than any test suite.
 

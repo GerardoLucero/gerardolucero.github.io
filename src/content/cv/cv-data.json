@@ -68,7 +68,7 @@
       "startYear": 2020,
       "location": "Mexico City, Mexico",
       "type": "Full-time",
-      "description": "Led the end-to-end digital transformation of Grupo Findep's lending and collections platform across 3 business units, managing a 12-person team (9 engineers, 2 QA, 1 DevOps). Architected and delivered event-driven systems on Kafka processing 400K monthly credit applications and a payments circuit handling 200M transactions — over 1B MXN processed in a single quarter. Designed state machines for credit origination, collections strategy, and decisioning, while building the full digital sales and collections infrastructure from the ground up.",
+      "description": "Led the end-to-end digital transformation of a multi-unit lending and collections platform across 3 business units, managing a 12-person team (9 engineers, 2 QA, 1 DevOps). Architected and delivered event-driven systems on Kafka processing 400K monthly credit applications and a payments circuit handling 200M transactions — over 1B MXN processed in a single quarter. Designed state machines for credit origination, collections strategy, and decisioning, while building the full digital sales and collections infrastructure from the ground up.",
       "highlights": [
         "400K monthly credit applications — event-driven origination platform on Kafka with state machines deployed across 3 business units",
         "200M payment transactions — full payments circuit: Oxxo, PayNearMe, OpenPay, card payments, STP, bank direct debits (BBVA, Santander, HSBC)",

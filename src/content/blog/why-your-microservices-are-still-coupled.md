@@ -105,7 +105,7 @@ The order service no longer cares whether the payment service is up. If the paym
 
 When you hardcode service URLs or make direct HTTP calls without service discovery, you're coupling your service to a specific network location. Redeploy to a new host, scale horizontally, or rotate IPs — and your dependencies break.
 
-In financial systems, this surfaces most painfully during infrastructure migrations. At Círculo de Crédito, moving services between environments or scaling a bureau lookup service behind a load balancer would require hunting down every hardcoded URL in downstream consumers. That's spatial coupling: your service embeds knowledge of where another service physically lives.
+In financial systems, this surfaces most painfully during infrastructure migrations. At a large credit reporting company, moving services between environments or scaling a bureau lookup service behind a load balancer would require hunting down every hardcoded URL in downstream consumers. That's spatial coupling: your service embeds knowledge of where another service physically lives.
 
 ```
 SPATIAL COUPLING (bad):

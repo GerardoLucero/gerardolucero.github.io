@@ -101,7 +101,7 @@ Enabling teams don't build features. They help stream-aligned teams build featur
 
 A critical distinction: an enabling team doesn't do the work *for* the stream team. It teaches the stream team to do the work themselves. When an enabling team's engagement becomes permanent — when stream teams can't operate without them — it has become a bottleneck, not an enabler.
 
-At Círculo, the Architecture Squad operated this way by design. We'd engage with a squad for four to six weeks — helping them define service boundaries, set up their deployment pipeline, or adopt a pattern — and then we'd leave. The goal was always that the squad could run independently when we were done. The hardest part of that model is resisting the pull to keep helping. When you're the experts, the temptation to stay involved is real.
+At a credit reporting company I worked with, the Architecture Squad operated this way by design. We'd engage with a squad for four to six weeks — helping them define service boundaries, set up their deployment pipeline, or adopt a pattern — and then we'd leave. The goal was always that the squad could run independently when we were done. The hardest part of that model is resisting the pull to keep helping. When you're the experts, the temptation to stay involved is real.
 
 ```java
 // Enabling team: Platform Architecture Guild
@@ -211,7 +211,7 @@ Team Topologies defines three interaction modes:
 
 The progression matters: teams often start in Collaboration mode while working out the right interface, then shift to X-as-a-Service once the contract stabilizes. Staying in Collaboration too long is the most common failure — it feels productive, but it means both teams are blocked on each other's schedules.
 
-At Círculo, the Architecture Squad operated primarily in Facilitating mode. When we were introducing a new practice (say, distributed tracing or service mesh configuration), we'd briefly enter Collaboration mode with a squad to prototype together. Once patterns were established, we'd document the golden path and move to X-as-a-Service: squads consume the platform, we maintain it.
+At that same company, the Architecture Squad operated primarily in Facilitating mode. When we were introducing a new practice (say, distributed tracing or service mesh configuration), we'd briefly enter Collaboration mode with a squad to prototype together. Once patterns were established, we'd document the golden path and move to X-as-a-Service: squads consume the platform, we maintain it.
 
 ---
 
@@ -257,7 +257,7 @@ The platform team addresses this by reducing cognitive load for stream teams. If
 
 ## The IDP as Architecture: What Your Platform Reveals
 
-At Círculo de Crédito, we built an IDP that ran on Kubernetes with golden paths for deployment, observability, and secret injection. One of the clearest lessons from that build: the platform is a mirror. What the platform makes easy, teams will build. What the platform makes hard, teams will avoid or build badly — usually both.
+At a regulated financial company, we built an IDP that ran on Kubernetes with golden paths for deployment, observability, and secret injection. One of the clearest lessons from that build: the platform is a mirror. What the platform makes easy, teams will build. What the platform makes hard, teams will avoid or build badly — usually both.
 
 When we added auto-instrumented distributed tracing for HTTP services, adoption was immediate. Engineers didn't have to change a line of application code. When the same capability wasn't yet available for Kafka consumers, those services shipped with no trace context and became black boxes during incidents.
 
