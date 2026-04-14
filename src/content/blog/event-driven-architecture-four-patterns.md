@@ -33,16 +33,15 @@ Let's get into the patterns.
 
 In a traditional account system you store the current balance — that's it. If a regulator asks "how did this account get to this balance?" you reconstruct it from logs, audit tables, or whatever your team remembered to add. Event Sourcing makes that reconstruction the primary model. You store the sequence of things that happened, and current state is always derived by replaying them.
 
-```
-TRADITIONAL:              EVENT SOURCING:
-┌──────────────┐          ┌──────────────────────────────────────┐
-│   Account    │          │  Event Log (append-only)             │
-│  ──────────  │          │  ────────────────────────────────    │
-│  balance:    │          │  1. AccountOpened      (+$0)         │
-│  $1,200      │          │  2. DepositMade        (+$1,500)     │
-└──────────────┘          │  3. WithdrawalMade     (-$300)       │
-  No history              │  → Replay = $1,200                   │
-                          └──────────────────────────────────────┘
+```mermaid
+block-beta
+  columns 2
+  block:trad["Traditional"]:1
+    A["Account\nbalance: $1,200\n(no history)"]
+  end
+  block:es["Event Sourcing"]:1
+    B["Event Log (append-only)\n1. AccountOpened  +$0\n2. DepositMade  +$1,500\n3. WithdrawalMade  -$300\n→ Replay = $1,200"]
+  end
 ```
 
 This matters in regulated financial environments because the log is the truth — not a side effect of it. You get tamper-evident history, the ability to replay to any point in time, and a foundation for the CQRS pattern below.
@@ -127,20 +126,11 @@ Once a loan application changes state — approved, disbursed, defaulted — sev
 
 Pub/Sub decouples that fan-out. The producer publishes one event; each consumer group receives it independently, processes at its own pace, and fails without affecting the others.
 
-```
-                  ┌─────────────────────────────────────────────┐
-                  │              Kafka Topic                     │
-  ┌───────────┐   │  account-events                             │
-  │  Account  │──▶│  ─────────────────────────────────────────  │
-  │  Service  │   │  [AccountOpened] [DepositMade] [Withdrawn]  │
-  └───────────┘   └──────────┬──────────────┬───────────────────┘
-                             │              │
-              ┌──────────────┘              └──────────────────┐
-              ▼                                                 ▼
-  ┌──────────────────────┐                       ┌─────────────────────────┐
-  │  notification-svc    │                       │  fraud-detection-svc    │
-  │  (consumer group A)  │                       │  (consumer group B)     │
-  └──────────────────────┘                       └─────────────────────────┘
+```mermaid
+flowchart LR
+    AS["Account Service"] --> KT["Kafka Topic\naccount-events\n[AccountOpened]\n[DepositMade]\n[Withdrawn]"]
+    KT --> NS["notification-svc\nconsumer group A"]
+    KT --> FD["fraud-detection-svc\nconsumer group B"]
 ```
 
 The publisher abstracts Kafka behind a clean interface so the domain code doesn't have to know how events are transported:
@@ -206,26 +196,23 @@ In a high-volume lending system, the write path and the read path have fundament
 
 CQRS separates them entirely. Commands mutate state and produce events. Queries read from projections — denormalized read models built specifically for the query pattern they serve.
 
-```
-  WRITE SIDE                              READ SIDE
-  ─────────────────────────────           ─────────────────────────────
-  Command                                 Query
-     │                                       │
-     ▼                                       ▼
-  Command Handler                         Read Model (projection)
-     │                                    (denormalized, query-optimized)
-     ▼
-  Aggregate → DomainEvent
-     │
-     ├──▶ EventStore (append)
-     │
-     └──▶ EventPublisher
-               │
-               ▼
-           Kafka topic
-               │
-               ▼
-         Projection updater ──▶ Read Model
+```mermaid
+flowchart TD
+    subgraph write["Write Side"]
+        CMD["Command"] --> CH["Command Handler"]
+        CH --> AGG["Aggregate"]
+        AGG --> DE["DomainEvent"]
+        DE --> ES["EventStore\n(append-only)"]
+        DE --> EP["EventPublisher"]
+    end
+    subgraph kafka["Transport"]
+        EP --> KT["Kafka Topic"]
+    end
+    subgraph read["Read Side"]
+        KT --> PU["Projection Updater"]
+        PU --> RM["Read Model\n(denormalized)"]
+        QRY["Query"] --> RM
+    end
 ```
 
 The write side produces events and never queries. The read side listens for events and updates its own store. They never share a database table:
