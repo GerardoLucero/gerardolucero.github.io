@@ -30,27 +30,13 @@ Team Topologies, the framework by Matthew Skelton and Manuel Pais, addresses thi
 
 Before diving into each type, here is the full picture. The arrows are key — they show what flows between teams and in which direction.
 
-```
-TEAM TOPOLOGIES — FOUR TYPES
-════════════════════════════
-
-                    ┌──────────────────────────────────────────┐
-                    │           Platform Team                   │
-                    │  (builds the golden paths and IDP)        │
-                    └───────────────┬──────────────────────────┘
-                        provides    │     provides
-                    ┌───────────────┘──────────────────┐
-                    │                                  │
-         ┌──────────▼───────────┐           ┌──────────▼───────────┐
-         │  Stream-Aligned Team  │           │  Stream-Aligned Team  │
-         │  (Checkout Flow)      │           │  (User Onboarding)    │
-         └──────────────────────┘           └──────────────────────┘
-                    ▲                                  ▲
-                    │ enables                          │ enables
-         ┌──────────┴───────────┐           ┌──────────┴───────────┐
-         │  Enabling Team        │           │  Complicated Subsystem│
-         │  (Architecture Guild) │           │  (Risk Engine)        │
-         └──────────────────────┘           └──────────────────────┘
+```mermaid
+flowchart TD
+    PT["Platform Team\n(builds golden paths and IDP)"]
+    PT -->|"provides"| SA1["Stream-Aligned Team\n(Checkout Flow)"]
+    PT -->|"provides"| SA2["Stream-Aligned Team\n(User Onboarding)"]
+    ET["Enabling Team\n(Architecture Guild)"] -->|"enables"| SA1
+    CS["Complicated Subsystem Team\n(Risk Engine)"] -->|"enables"| SA2
 ```
 
 The Platform team is not a support team — it is a product team whose customers are internal engineers. The Enabling team is temporary by design: it closes a capability gap and steps back. The Complicated Subsystem team hides deep expertise behind a simple interface. Stream-Aligned teams are the units that actually deliver value to users.
@@ -63,18 +49,20 @@ The Platform team is not a support team — it is a product team whose customers
 
 A stream-aligned team is end-to-end responsible for a user-facing capability. "End-to-end" means from product definition through code through deployment through on-call support.
 
-```
-Stream-Aligned Team: Checkout Flow
-- Product Owner: owns the business outcome
-- Full-stack developers: frontend + backend
-- DevOps engineer: infrastructure and deployment
-- Ownership: the entire checkout experience, including its SLO
-
-What this team owns:
-- cart-service
-- payment-service (checkout-specific)
-- checkout-ui
-- All associated SLOs and on-call rotations
+```mermaid
+flowchart LR
+    subgraph team["Stream-Aligned Team: Checkout Flow"]
+        PO["Product Owner\n(owns business outcome)"]
+        DEV["Full-stack Developers\n(frontend + backend)"]
+        DO["DevOps Engineer\n(infrastructure + deployment)"]
+    end
+    subgraph owns["What this team owns"]
+        SVC1["cart-service"]
+        SVC2["payment-service\n(checkout-specific)"]
+        UI["checkout-ui"]
+        SLO["SLOs + on-call rotations"]
+    end
+    team --> owns
 ```
 
 The defining characteristic is outcome ownership, not technology ownership. A stream-aligned team owns a business metric, not a tier in the stack. If the checkout conversion rate drops, this team is responsible.
@@ -237,16 +225,12 @@ The converse is also true and worth internalizing: if you have one team responsi
 A concept from Team Topologies that doesn't get enough attention: cognitive load. Every team member can only hold a certain amount of complexity in their head. When a team's cognitive load exceeds this limit, quality drops, velocity drops, and burnout follows.
 
 **Dunbar's Number applied to teams:**
-```
-Team size for effective communication:
-- 5-9 people: Core execution team
-- 8-12 people: Squad with autonomy
-- 50-150 people: Tribe/department limit
-
-Communication channels = n(n-1)/2
-- 5 people  = 10 channels
-- 10 people = 45 channels
-- 15 people = 105 channels
+```mermaid
+xychart-beta
+    title "Communication channels grow faster than team size (n×(n-1)/2)"
+    x-axis ["5 people", "10 people", "15 people"]
+    y-axis "Channels" 0 --> 120
+    bar [10, 45, 105]
 ```
 
 When Brooks' Law says "adding people to a late project makes it later," it's pointing to this: adding people increases communication overhead faster than it increases productive capacity.

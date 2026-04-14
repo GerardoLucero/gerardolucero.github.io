@@ -16,24 +16,17 @@ This post is the archetype for that transition: a complete, production-oriented 
 
 Before the architecture: it's worth understanding what Kafka Streams actually buys you over writing a consumer yourself.
 
-```
-Simple Consumer Loop:
-
-  Kafka ──► poll() ──► process() ──► commit offset
-               │
-               └─ You manage: state, failures, exactly-once,
-                  windowing, joins, recovery after restart
-
-
-Kafka Streams:
-
-  Kafka ──► Topology ──► State Stores (RocksDB) ──► Output Topics
-               │               │
-               │         Changelog topics
-               │         (automatic state backup)
-               │
-               └─ Framework manages: windowing, joins, exactly-once,
-                  rebalancing, state recovery, interactive queries
+```mermaid
+flowchart LR
+    subgraph simple["Simple Consumer Loop"]
+        K1["Kafka"] --> P["poll()"] --> PR["process()"] --> CO["commit offset"]
+        PR --> M1["You manage:\nstate · failures\nexactly-once · windowing\njoins · restart recovery"]
+    end
+    subgraph ks["Kafka Streams"]
+        K2["Kafka"] --> T["Topology"] --> SS["State Stores\n(RocksDB)"] --> OT["Output Topics"]
+        SS --> CL["Changelog topics\n(auto state backup)"]
+        T --> M2["Framework manages:\nwindowing · joins\nexactly-once · rebalancing\nstate recovery · interactive queries"]
+    end
 ```
 
 A consumer loop is the right tool when you need simple, stateless processing: read a message, call an API, write a result. The moment you need to aggregate across time windows, join two streams, or maintain state that survives a restart, a consumer loop becomes a framework you're building yourself — poorly.
@@ -46,25 +39,21 @@ Kafka Streams handles all of that. It runs as a library inside your Spring Boot 
 
 Here's the full topology we're building before any code:
 
-```
-                    ┌─────────────────────────────────────────┐
-                    │         Kafka Streams Topology          │
-                    │                                         │
-user-events ───────►│ UserMetricsProcessor                    │
-                    │   └─ WindowedAggregation(5min)          │──► user-metrics
-                    │   └─ SessionAggregation                 │
-                    │                                         │
-order-events ──────►│ OrderAnalyticsProcessor                 │──► order-analytics
-                    │   └─ HourlyAggregation                  │
-                    │                                         │
-user-events ───┐    │ StreamJoinProcessor                     │
-order-events ──┴───►│   └─ Join(5min window, by userId)       │──► enriched-events
-                    │                                         │
-                    │  State Stores (RocksDB):                │
-                    │  ├─ user-login-counts (windowed)        │
-                    │  ├─ user-sessions (KV)                  │
-                    │  └─ hourly-order-analytics (windowed)   │
-                    └─────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    UE["user-events"] --> UMP["UserMetricsProcessor\nWindowedAggregation 5min\nSessionAggregation"]
+    UMP --> UM["user-metrics"]
+    OE["order-events"] --> OAP["OrderAnalyticsProcessor\nHourlyAggregation"]
+    OAP --> OA["order-analytics"]
+    UE --> SJP["StreamJoinProcessor\nJoin 5min window by userId"]
+    OE --> SJP
+    SJP --> EV["enriched-events"]
+    subgraph stores["State Stores (RocksDB)"]
+        S1["user-login-counts (windowed)"]
+        S2["user-sessions (KV)"]
+        S3["hourly-order-analytics (windowed)"]
+    end
+    UMP & OAP & SJP --- stores
 ```
 
 Each state store is backed by a changelog topic in Kafka. If the application crashes, it replays from the changelog and reconstructs in-memory state automatically. With `EXACTLY_ONCE_V2`, offset commits and state store updates happen atomically — no double-counting, no lost events.

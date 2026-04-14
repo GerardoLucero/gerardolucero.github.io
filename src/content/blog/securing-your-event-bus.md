@@ -26,22 +26,13 @@ Before writing any code, understand what you're defending against. In financial 
 
 A production security posture needs to address all five.
 
-```
-EVENT BUS THREAT MODEL
-══════════════════════
-
-Producer ─── [1. Spoofing] ──► Kafka Broker ──── [2. Eavesdropping] ──► Consumer
-    │                               │                                        │
-    │                         [3. Tampering]                          [4. Unauth Access]
-    │                               │
-    └───────────────────── [5. Non-repudiation gaps] ──────────────────────┘
-
-Controls:
-[1] mTLS + Message signing
-[2] TLS transport + Payload encryption
-[3] Message signing + AES-GCM
-[4] Kafka ACLs + RBAC
-[5] Immutable audit trail
+```mermaid
+flowchart LR
+    P["Producer"] -->|"① Spoofing\nControl: mTLS + signing"| KB["Kafka Broker"]
+    KB -->|"② Eavesdropping\nControl: TLS + encryption"| C["Consumer"]
+    KB -->|"③ Tampering\nControl: signing + AES-GCM"| KB
+    C -->|"④ Unauth Access\nControl: Kafka ACLs + RBAC"| C
+    P -.->|"⑤ Non-repudiation gaps\nControl: immutable audit trail"| C
 ```
 
 ---
