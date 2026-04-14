@@ -16,7 +16,7 @@ This post covers the four patterns that actually matter in high-compliance, high
 
 Before the patterns, the *why*. Synchronous request-response architectures create invisible coupling. When Service A calls Service B directly, you've bound their lifecycles together — a B outage becomes an A outage. At scale, this becomes a distributed monolith.
 
-At Findep, credit scoring, disbursement, collections, and fraud detection all needed to react to loan application state changes. Wiring those together with REST calls would have created a dependency graph that made deployments a coordination nightmare. Events let each team own their reaction to what happened, without being coupled to the service that produced it.
+At a multi-unit fintech lender, credit scoring, disbursement, collections, and fraud detection all needed to react to loan application state changes. Wiring those together with REST calls would have created a dependency graph that made deployments a coordination nightmare. Events let each team own their reaction to what happened, without being coupled to the service that produced it.
 
 Events flip the dependency model. Instead of "call this service," you declare "this thing happened." Consumers decide what to do. The four pillars of a solid EDA:
 
@@ -115,7 +115,7 @@ public interface EventStore {
 }
 ```
 
-**When to use it:** When you need a full audit trail, when "undo" is a business requirement, or when rebuilding state from scratch needs to be possible (e.g., regulatory replay requests). At Círculo de Crédito, credit bureau data has strict retention and traceability requirements — this pattern fits naturally.
+**When to use it:** When you need a full audit trail, when "undo" is a business requirement, or when rebuilding state from scratch needs to be possible (e.g., regulatory replay requests). At a credit reporting company, credit bureau data has strict retention and traceability requirements — this pattern fits naturally.
 
 **When to avoid it:** For simple CRUD entities where history has no business value. Event Sourcing adds operational complexity — snapshots, schema evolution, projection rebuilds. Don't use it everywhere.
 
@@ -123,7 +123,7 @@ public interface EventStore {
 
 ## Pattern 2: Pub/Sub with Kafka
 
-Once a loan application changes state at Findep — approved, disbursed, defaulted — seven different downstream systems need to know: collections, fraud, reporting, customer notifications, the scoring model, the ledger, the CRM. You cannot afford to call all of them synchronously from the originating service. One slow consumer stalls the whole operation.
+Once a loan application changes state — approved, disbursed, defaulted — seven different downstream systems need to know: collections, fraud, reporting, customer notifications, the scoring model, the ledger, the CRM. You cannot afford to call all of them synchronously from the originating service. One slow consumer stalls the whole operation.
 
 Pub/Sub decouples that fan-out. The producer publishes one event; each consumer group receives it independently, processes at its own pace, and fails without affecting the others.
 
@@ -289,7 +289,7 @@ public class TransactionReadModel {
 }
 ```
 
-**The real benefit:** multiple read models for the same event stream, each optimized for a different use case — fast single-record lookup, a search index, a reporting aggregate, a collections queue. None of them affect the write path. At Findep, we had the same transaction event stream feeding separate projections for operations, finance, and regulatory reporting — each one shaped for its consumer.
+**The real benefit:** multiple read models for the same event stream, each optimized for a different use case — fast single-record lookup, a search index, a reporting aggregate, a collections queue. None of them affect the write path. At that same fintech platform, we had the same transaction event stream feeding separate projections for operations, finance, and regulatory reporting — each one shaped for its consumer.
 
 ---
 
@@ -374,7 +374,7 @@ Five rules I enforce in every production system:
 4. **Idempotent consumers** — design every handler to be safely re-entrant
 5. **Dead letter queues** — every consumer needs a DLQ and a retry policy
 
-The idempotency rule is especially important in financial systems. At Findep, a disbursement event being processed twice is not a logging problem — it's a money problem. Every consumer that touches money or credit state needs to track which event IDs it has already processed.
+The idempotency rule is especially important in financial systems. In financial systems, a disbursement event being processed twice is not a logging problem — it's a money problem. Every consumer that touches money or credit state needs to track which event IDs it has already processed.
 
 ---
 
