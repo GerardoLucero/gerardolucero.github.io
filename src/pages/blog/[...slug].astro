@@ -40,6 +40,35 @@ function formatDate(date: Date) {
         <Content />
       </article>
 
+      <script>
+        import mermaid from "mermaid";
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "dark",
+          themeVariables: {
+            darkMode: true,
+            background: "#0d1117",
+            primaryColor: "#1e2a3a",
+            primaryTextColor: "#c9d1d9",
+            primaryBorderColor: "#30363d",
+            lineColor: "#58a6ff",
+            secondaryColor: "#161b22",
+            tertiaryColor: "#21262d",
+            fontFamily: "ui-monospace, SFMono-Regular, monospace",
+            fontSize: "13px",
+            nodeBorder: "#30363d",
+            clusterBkg: "#161b22",
+            titleColor: "#e6edf3",
+            edgeLabelBackground: "#161b22",
+            attributeBackgroundColorEven: "#161b22",
+            attributeBackgroundColorOdd: "#21262d",
+          },
+        });
+        document.addEventListener("DOMContentLoaded", () => {
+          mermaid.run({ nodes: document.querySelectorAll(".mermaid") });
+        });
+      </script>
+
       <footer class="post-footer animate-fade-in-up delay-300">
         <div class="author-card">
           <div class="author-info">
@@ -185,6 +214,37 @@ function formatDate(date: Date) {
     padding: 0.15em 0.4em;
     font-size: 0.875em;
     color: var(--color-accent);
+    font-family: var(--font-mono);
+  }
+
+  /* ── Mermaid diagrams ── */
+  .post-content :global(.mermaid-diagram) {
+    margin: 0 0 1.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: #0d1117;
+    padding: 1.5rem;
+    overflow-x: auto;
+  }
+
+  .post-content :global(.mermaid-diagram pre.mermaid) {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex;
+    justify-content: center;
+  }
+
+  .post-content :global(.mermaid-diagram svg) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .post-content :global(.mermaid-diagram .mermaid-error) {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
     font-family: var(--font-mono);
   }
 

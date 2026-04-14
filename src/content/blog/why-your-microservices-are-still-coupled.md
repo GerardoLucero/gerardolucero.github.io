@@ -26,21 +26,15 @@ The most insidious form. When Service A calls Service B synchronously, both serv
 
 In a payment processing system, this means a downstream fraud scoring service going down will block every new order from being created — even if fraud scoring is only needed minutes later during fulfillment, not at the moment of order intake.
 
-```
-TEMPORAL COUPLING (bad):
-
-OrderService ──── HTTP POST ────► PaymentService
-     │                                  │
-     └── waits for response ────────────┘
-         If PaymentService is down or slow,
-         OrderService returns 500 to the customer
-
-TEMPORAL DECOUPLING (good):
-
-OrderService ──► [payment-events topic] ◄── PaymentService
-     │                 (Kafka)                     │
-     └── publishes event,               consumes when ready,
-         returns 202 immediately        retries on failure
+```mermaid
+flowchart LR
+    subgraph bad["❌ Temporal Coupling"]
+        OS1["OrderService"] -->|"HTTP POST\n(blocks, waits)"| PS1["PaymentService\n(down = 500 error)"]
+    end
+    subgraph good["✅ Temporal Decoupling"]
+        OS2["OrderService\n(returns 202)"] -->|"publishes event"| KF["payment-events\nKafka topic"]
+        KF -->|"consumes when ready\nretries on failure"| PS2["PaymentService"]
+    end
 ```
 
 **The pattern (before):**
@@ -107,21 +101,16 @@ When you hardcode service URLs or make direct HTTP calls without service discove
 
 In financial systems, this surfaces most painfully during infrastructure migrations. At a large credit reporting company, moving services between environments or scaling a bureau lookup service behind a load balancer would require hunting down every hardcoded URL in downstream consumers. That's spatial coupling: your service embeds knowledge of where another service physically lives.
 
-```
-SPATIAL COUPLING (bad):
-
-CreditCheckService ──► "http://fraud-scoring-svc:8080/score"
-                              (hardcoded host + port)
-                              breaks on: scaling, redeploy,
-                              env migration, IP rotation
-
-SPATIAL DECOUPLING (good):
-
-CreditCheckService ──► FraudScoringClient (interface)
-                              │
-                        DiscoveryClient resolves
-                        "fraud-scoring-svc" → current instances
-                        LoadBalancer picks one
+```mermaid
+flowchart LR
+    subgraph bad["❌ Spatial Coupling"]
+        CC1["CreditCheckService"] -->|"hardcoded URL\nhttp://fraud-scoring-svc:8080/score"| FS1["FraudScoringService\n(breaks on scale/redeploy)"]
+    end
+    subgraph good["✅ Spatial Decoupling"]
+        CC2["CreditCheckService"] --> FSC["FraudScoringClient\n(interface)"]
+        FSC --> DC["DiscoveryClient\nresolves instances"]
+        DC --> LB["LoadBalancer → current instance"]
+    end
 ```
 
 Hardcoding service locations is a hidden deployment tax. Every infrastructure change requires application code changes.
@@ -236,22 +225,17 @@ Vendor-specific APIs baked into your service logic make platform migration a rew
 
 Financial systems are particularly exposed here. Document storage for credit reports, audit trail archiving, encrypted transaction logs — all of these tend to accumulate direct S3 or Azure Blob calls scattered across service logic. When a compliance requirement forces you to a different storage tier, or your company negotiates a cloud contract switch, you're rewriting business logic instead of swapping an adapter.
 
-```
-PLATFORM COUPLING (bad):
-
-DocumentService ──► AmazonS3 (direct SDK call)
-                         │
-                    Changing cloud provider = rewrite
-                    Running tests locally = need AWS credentials
-                    Compliance audit storage move = code change
-
-PLATFORM DECOUPLING (good):
-
-DocumentService ──► DocumentStorage (interface)
-                         │
-                    @Profile("aws")  → S3DocumentStorage
-                    @Profile("gcp")  → GCSDocumentStorage
-                    @Profile("test") → InMemoryDocumentStorage
+```mermaid
+flowchart LR
+    subgraph bad["❌ Platform Coupling"]
+        DS1["DocumentService"] -->|"direct SDK call"| S3["AmazonS3\n(provider change = rewrite)"]
+    end
+    subgraph good["✅ Platform Decoupling"]
+        DS2["DocumentService"] --> DSI["DocumentStorage\n(interface)"]
+        DSI -->|"@Profile aws"| S3A["S3DocumentStorage"]
+        DSI -->|"@Profile gcp"| GCS["GCSDocumentStorage"]
+        DSI -->|"@Profile test"| MEM["InMemoryDocumentStorage"]
+    end
 ```
 
 When your service logic knows the name `AmazonS3`, you've baked an infrastructure decision into your domain code. Decoupling it costs almost nothing upfront and saves significant work when requirements change.
