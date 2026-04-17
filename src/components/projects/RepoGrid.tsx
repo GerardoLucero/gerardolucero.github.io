@@ -84,13 +84,13 @@ export default function RepoGrid({ username }: { username: string }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=30`)
+    fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=100`)
       .then((r) => {
         if (!r.ok) throw new Error(`GitHub API error: ${r.status}`);
         return r.json();
       })
       .then((data: Repo[]) => {
-        setRepos(data.filter((r) => !r.fork).slice(0, 12));
+        setRepos(data.filter((r) => !r.fork));
         setLoading(false);
       })
       .catch((e) => {
