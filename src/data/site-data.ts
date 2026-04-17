@@ -12,7 +12,7 @@ export const siteData = {
     "7+ years building distributed systems across fintech and retail. Rare combination of platform architecture, security engineering (DevSecOps), and technical product management — operating across Kafka, Kubernetes, AWS, and GCP at production scale.",
   highlights: [
     { value: "7+",    label: "Years of experience" },
-    { value: "15M+", label: "Credit queries / month" },
+    { value: "20M+", label: "Credit queries / month" },
     { value: "1,200+", label: "Repositories secured" },
     { value: "$1B+", label: "MXN in production pipelines" },
   ],
