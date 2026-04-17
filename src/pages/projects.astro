@@ -10,12 +10,12 @@ const NPM_PACKAGES = [
   "calendario-fiscal-mx","generador-datos-mx",
 ];
 
-// ── npm downloads (build-time) ─────────────────────────────────────────────
+// ── npm downloads (build-time, last year) ──────────────────────────────────
 let totalNpmDownloads = 0;
 
 try {
   const res = await fetch(
-    `https://api.npmjs.org/downloads/point/last-month/${NPM_PACKAGES.join(",")}`
+    `https://api.npmjs.org/downloads/point/last-year/${NPM_PACKAGES.join(",")}`
   );
   if (res.ok) {
     const data = await res.json();
@@ -116,7 +116,7 @@ function fmt(n: number): string {
 }
 
 const statsBar = [
-  { value: fmt(totalNpmDownloads) || "—", label: "npm downloads / month" },
+  { value: fmt(totalNpmDownloads) || "—", label: "npm downloads / year" },
   { value: NPM_PACKAGES.length.toString(), label: "npm packages" },
   { value: fmt(githubCommits) || "—",      label: `commits ${new Date().getFullYear()}` },
   { value: fmt(totalLinesOfCode) || "—",   label: "lines of code" },
