@@ -140,6 +140,58 @@ const statsBar = [
         </p>
       </header>
 
+      <!-- Featured Work -->
+      <section class="featured-section animate-fade-in-up delay-50">
+        <h2 class="section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          Featured Work
+        </h2>
+        <div class="featured-grid">
+
+          <div class="featured-card">
+            <span class="featured-tag">Platform Engineering · IDP</span>
+            <h3 class="featured-name">Yun Provisioner</h3>
+            <p class="featured-desc">
+              Cloud provisioner in Go that automates K8s namespace, Vault secrets, ArgoCD app, and Harbor registry for a new service in ~2 seconds. Backstage golden path integration — from catalog entry to running pod with zero manual steps.
+            </p>
+            <div class="featured-tech">
+              {["Go", "Kubernetes", "Vault", "ArgoCD", "Harbor", "Backstage"].map(t => (
+                <span class="badge badge-primary">{t}</span>
+              ))}
+            </div>
+          </div>
+
+          <div class="featured-card">
+            <span class="featured-tag">AI Systems · DevSecOps</span>
+            <h3 class="featured-name">Career Intelligence System</h3>
+            <p class="featured-desc">
+              LLM-powered job offer analyzer on Kubernetes — Spring AI + Claude API + MCP integration. Kafka event pipeline, PostgreSQL persistence, and Telegram proactive alerts. Full DevSecOps pipeline with SAST, Cosign image signing, and SBOM.
+            </p>
+            <div class="featured-tech">
+              {["Spring AI", "Claude API", "MCP", "Kafka", "Kubernetes", "ArgoCD"].map(t => (
+                <span class="badge badge-primary">{t}</span>
+              ))}
+            </div>
+          </div>
+
+          <div class="featured-card">
+            <span class="featured-tag">Homelab · Infrastructure</span>
+            <h3 class="featured-name">Homelab IDP — 6-Node K8s Cluster</h3>
+            <p class="featured-desc">
+              Production-grade Internal Developer Platform on bare-metal Talos Linux. Backstage software catalog, Kafka, Vault, Istio mTLS, Kyverno policy enforcement, Falco runtime security, Cosign image signing, SonarQube quality gates, and full GitOps with ArgoCD.
+            </p>
+            <div class="featured-tech">
+              {["Talos Linux", "Backstage", "Kafka", "Istio", "Vault", "Falco", "Kyverno"].map(t => (
+                <span class="badge badge-primary">{t}</span>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       <!-- Stats bar -->
       <div class="stats-bar animate-fade-in-up delay-100">
         {statsBar.map(s => (
@@ -377,5 +429,60 @@ const statsBar = [
     .stats-bar { gap: 1rem; padding: 1rem; }
     .stat-value { font-size: 1.2rem; }
     .loc-bar { padding: 0.75rem 1rem; }
+    .featured-grid { grid-template-columns: 1fr; }
   }
+
+  /* ── Featured Work ─────────────────────────────────────── */
+  .featured-section { margin-bottom: 2.5rem; }
+
+  .featured-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 900px) {
+    .featured-grid { grid-template-columns: 1fr; }
+  }
+
+  .featured-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .featured-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 8px 30px color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+
+  .featured-tag {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-accent);
+  }
+
+  .featured-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-heading);
+    margin: 0;
+  }
+
+  .featured-desc {
+    font-size: 0.825rem;
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    flex: 1;
+    margin: 0;
+  }
+
+  .featured-tech { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: auto; }
 </style>
