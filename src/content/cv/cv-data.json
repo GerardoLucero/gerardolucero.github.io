@@ -1,7 +1,7 @@
 {
   "personal": {
     "name": "Gerardo Lucero",
-    "title": "Solutions Architect | DevSecOps Engineer",
+    "title": "Senior Platform Engineer | Solutions Architect | DevSecOps",
     "email": "luceroriosg@gmail.com",
     "phone": "+52 612-1419800",
     "location": "Mexico City, Mexico",
@@ -156,7 +156,13 @@
       "OpenShift",
       "Karpenter",
       "Cloud Run",
-      "Terraform"
+      "Terraform",
+      "Backstage",
+      "ArgoCD",
+      "Vault",
+      "Istio",
+      "Kyverno",
+      "Falco"
     ],
     "observability": [
       "Dynatrace",
@@ -167,12 +173,14 @@
     ],
     "languages": [
       "Java",
+      "Go",
       "Python",
       "JavaScript",
       "TypeScript"
     ],
     "frameworks": [
       "Spring Boot",
+      "Spring AI",
       "Node.js",
       "React.js"
     ],
@@ -188,6 +196,10 @@
       "GitHub Actions",
       "Docker",
       "SAST / DAST",
+      "Cosign",
+      "Trivy",
+      "Gitleaks",
+      "SBOM",
       "Arduino"
     ]
   },
@@ -197,6 +209,6 @@
   ],
   "metadata": {
     "version": "1.0.0",
-    "lastUpdated": "2026-03-29"
+    "lastUpdated": "2026-06-15"
   }
 }
