@@ -180,10 +180,36 @@ const statsBar = [
             <span class="featured-tag">Homelab · Infrastructure</span>
             <h3 class="featured-name">Homelab IDP — 6-Node K8s Cluster</h3>
             <p class="featured-desc">
-              Production-grade Internal Developer Platform on bare-metal Talos Linux. Backstage software catalog, Kafka, Vault, Istio mTLS, Kyverno policy enforcement, Falco runtime security, Cosign image signing, SonarQube quality gates, and full GitOps with ArgoCD.
+              Production-grade Internal Developer Platform on bare-metal Talos Linux (36 cores, 96GB RAM). Backstage portal with golden paths, Kafka event streaming (400K+ monthly transactions), Vault secret management, Kyverno policy enforcement, Falco runtime security, Cosign image signing. Full DevSecOps pipeline (3m 52s). Documented with 4-level C4 architecture diagrams in Mermaid.
             </p>
             <div class="featured-tech">
-              {["Talos Linux", "Backstage", "Kafka", "Istio", "Vault", "Falco", "Kyverno"].map(t => (
+              {["Talos Linux", "Backstage", "Kafka", "Istio", "Vault", "Falco", "Kyverno", "C4 Diagrams"].map(t => (
+                <span class="badge badge-primary">{t}</span>
+              ))}
+            </div>
+          </div>
+
+          <div class="featured-card">
+            <span class="featured-tag">AI Systems · Focus Groups</span>
+            <h3 class="featured-name">Crowdmind</h3>
+            <p class="featured-desc">
+              AI focus groups in 2 minutes. Simulates N diverse personas (hiring managers, CTOs, investors, customers) evaluating your CV, pitch, or product copy. Haiku for parallel evaluation, Sonnet for quality synthesis. Cost: ~$0.02/run. API-first, agent-invocable for autonomous decision-making.
+            </p>
+            <div class="featured-tech">
+              {["Next.js", "Claude API", "TypeScript", "Anthropic SDK", "PostgreSQL", "Rest API"].map(t => (
+                <span class="badge badge-primary">{t}</span>
+              ))}
+            </div>
+          </div>
+
+          <div class="featured-card">
+            <span class="featured-tag">Career Tools · Stress Testing</span>
+            <h3 class="featured-name">CV Stress Test</h3>
+            <p class="featured-desc">
+              Evaluates your CV against real job descriptions using LLMs. Extracts skills gaps, missing keywords, and actionable recommendations. Designed for ambitious engineers targeting international USD roles. Built with Claude API, TypeScript, and Vercel deployment.
+            </p>
+            <div class="featured-tech">
+              {["Claude API", "TypeScript", "Vercel", "React", "LLM Analysis"].map(t => (
                 <span class="badge badge-primary">{t}</span>
               ))}
             </div>
@@ -437,11 +463,15 @@ const statsBar = [
 
   .featured-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.25rem;
   }
 
   @media (max-width: 900px) {
+    .featured-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 600px) {
     .featured-grid { grid-template-columns: 1fr; }
   }
 
