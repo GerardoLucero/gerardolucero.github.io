@@ -1,7 +1,7 @@
 ---
 title: "The Anatomy of an AI Chief of Staff: 17 Entities Before You Write a Single Prompt"
 description: "A reference map of the building blocks behind a multi-domain AI Chief of Staff system — structure, memory, governance, learning, and efficiency — for anyone trying to configure their own version instead of a single-agent inbox bot."
-pubDatetime: 2026-08-11T00:00:00Z
+pubDate: 2026-08-11
 draft: true
 tags: ["ai-agents", "architecture", "ai-chief-of-staff", "agent-governance", "reference-architecture"]
 ---
