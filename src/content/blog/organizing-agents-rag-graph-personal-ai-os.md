@@ -2,7 +2,7 @@
 title: "Building an AI Chief of Staff: Agents, RAG, and a Routing Graph That Knows When to Ask"
 description: "AI Chief of Staff tools are a known category now — mostly single-agent, professional-only, closed. Here's the architecture pattern behind a different version: domain agents, a hybrid RAG memory layer, and an explicit graph that decides when the system can act alone vs. when it must stop and ask."
 pubDate: 2026-08-11
-draft: true
+draft: false
 tags: ["ai-agents", "architecture", "rag", "platform-engineering", "claude-code", "ai-chief-of-staff", "agent-governance"]
 ---
 
