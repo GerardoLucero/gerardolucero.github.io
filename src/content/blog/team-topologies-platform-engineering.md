@@ -189,6 +189,26 @@ Platform Services:
 
 Team types describe *what* a team does. Interaction modes describe *how* teams work together. This distinction is where most implementations of Team Topologies break down — people define team types and stop there, never specifying how teams are supposed to coordinate.
 
+```mermaid
+flowchart TB
+    ST["Stream-Aligned Team\n(owns the outcome)"]
+    EN["Enabling Team"]
+    CS["Complicated Subsystem Team"]
+    PL["Platform Team"]
+
+    PL -->|"X-as-a-Service\nsteady state"| ST
+    CS -->|"X-as-a-Service\nsteady state"| ST
+    EN -.->|"Facilitating\ntemporary — steps back"| ST
+    PL -.->|"Collaboration\ntemporary — new capability"| ST
+
+    style ST fill:#2b6cb0,color:#fff
+    style EN fill:#975a16,color:#fff
+    style CS fill:#6b46c1,color:#fff
+    style PL fill:#2f855a,color:#fff
+```
+
+Solid arrows are steady state — the relationship is meant to stay this way indefinitely. Dashed arrows are meant to be temporary by design. The most common failure mode in the table below is exactly this distinction collapsing: a dashed relationship that never converts to solid, or never ends.
+
 Team Topologies defines three interaction modes:
 
 | Mode | What it means | When to use it | Common mistake |
