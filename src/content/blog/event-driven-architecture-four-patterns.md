@@ -149,16 +149,20 @@ public class KafkaEventPublisher implements EventPublisher {
     }
 }
 
-// Consumer — handles multiple event types from a single topic
+// Consumer — functional style. @StreamListener was removed from
+// Spring Cloud Stream years ago; a Consumer<T> bean is the current API,
+// and it's what StreamBridge's functional model expects on the other side.
 @Component
 public class AccountEventConsumer {
 
-    @StreamListener("account-events")
-    public void handleAccountEvent(DomainEvent event) {
-        switch (event.getEventType()) {
-            case "AccountOpened"    -> handleAccountOpened(event);
-            case "AccountActivated" -> handleAccountActivated(event);
-        }
+    @Bean
+    public Consumer<DomainEvent> accountEvents() {
+        return event -> {
+            switch (event.getEventType()) {
+                case "AccountOpened"    -> handleAccountOpened(event);
+                case "AccountActivated" -> handleAccountActivated(event);
+            }
+        };
     }
 
     private void handleAccountOpened(DomainEvent event) {
@@ -171,6 +175,8 @@ public class AccountEventConsumer {
 ```yaml
 spring:
   cloud:
+    function:
+      definition: accountEvents
     stream:
       kafka:
         binder:
@@ -180,7 +186,7 @@ spring:
         account-events-out:
           destination: account-events
           contentType: application/json
-        account-events-in:
+        accountEvents-in-0:
           destination: account-events
           group: notification-service-consumer-group
           contentType: application/json
@@ -378,12 +384,19 @@ The result is a system that is auditable by design, independently scalable at ea
 
 ---
 
-## What's Next
+## What Didn't Work at First
 
-In future posts I'll go deeper on:
+The first version of the read-side projections in a system like this rebuilt directly from the event store on every deploy: replay every event since the beginning, rebuild the read model, swap it in. That's fine for a young event log. It stops being fine once the log passes a few million events — replay time grows without bound, and eventually a deploy that used to take two minutes takes forty, which either blocks releases or gets "temporarily" skipped. Skipping it is the worst possible response in a system whose entire premise is that the event log is the source of truth.
 
-- **Kafka Streams for real-time analytics** — windowed aggregations, stream joins, and state stores
-- **Migrating a monolith to EDA incrementally** — the Strangler Fig pattern in practice
-- **Observability for event-driven systems** — which metrics actually predict production incidents
+The fix is snapshotting: periodically persist the projection's state alongside the event offset it represents, and on rebuild, replay only the events after the last snapshot instead of from genesis. It looks like an optimization you can add later. Treat it as a requirement from day one instead — once a projection is already too slow to rebuild, you can't safely rebuild it to retrofit the snapshot logic either. That's the trap.
+
+## If You're Applying This to Your Own System
+
+1. **Start with the write side, not the topics.** Get Event Sourcing right for your core aggregates before you design a single Kafka topic — the events you'll publish should fall out of the domain model, not be invented to fit a messaging tool.
+2. **Design your partition key before your first consumer.** It's the one decision that's expensive to change later, because changing it means every downstream ordering guarantee changes with it.
+3. **Build the DLQ and the idempotency check in the first consumer, not the fifth.** Retrofitting idempotency onto a consumer that's already in production, already processing real money or state, is a much harder migration than starting with it.
+4. **Add snapshotting to your projections before you need it,** not after a rebuild starts timing out in production.
+
+Three of these patterns get their own deep dive: [CQRS and projection design in a full streaming pipeline](/blog/kafka-stream-processing-pipeline), [migrating an existing monolith into this shape incrementally](/blog/from-monolith-to-event-driven), and [the observability layer that tells you whether it's actually working](/blog/observability-event-driven-systems).
 
 If you're building distributed systems and want to compare notes, [reach out](mailto:luceroriosg@gmail.com).

@@ -36,13 +36,21 @@ This isn't "the Cookbook example is wrong" — it's a clean, well-built pattern 
 
 Instead of a single system prompt trying to reason about a job offer, a Kubernetes incident, and a legal contract in the same breath, the system is organized like a small org chart. Each life/work domain has a dedicated agent — a "VP" — with a scoped role, its own decision heuristics, and no knowledge of domains outside its lane unless explicitly pulled in.
 
-```
-Chief of Staff (routes the request)
-├── Tech & Career Lead      → career strategy, market analysis, interview prep
-├── Finance Lead            → cash flow, projections, spend approval
-├── Legal Lead              → contracts, IP protection, compliance
-├── Personal Ops Lead       → energy, burnout signals, life balance
-└── Identity & Legacy Lead  → long-term reflection, family history
+```mermaid
+flowchart TB
+    R["Request"] --> CoS["Chief of Staff\n(triage only — never answers directly)"]
+    CoS --> T["Tech & Career Lead\ncareer strategy, market analysis, interview prep"]
+    CoS --> F["Finance Lead\ncash flow, projections, spend approval"]
+    CoS --> L["Legal Lead\ncontracts, IP protection, compliance"]
+    CoS --> P["Personal Ops Lead\nenergy, burnout signals, life balance"]
+    CoS --> I["Identity & Legacy Lead\nlong-term reflection, family history"]
+
+    style CoS fill:#4a5568,color:#fff
+    style T fill:#2b6cb0,color:#fff
+    style F fill:#2b6cb0,color:#fff
+    style L fill:#2b6cb0,color:#fff
+    style P fill:#2b6cb0,color:#fff
+    style I fill:#2b6cb0,color:#fff
 ```
 
 The Chief of Staff's only job is triage: read the request, detect which domain(s) it touches, and either answer directly (for domain-agnostic technical work) or delegate. When a request crosses two domains — say, a job offer that has both a career and a financial dimension — both agents get activated and their outputs get synthesized, rather than one generalist trying to hold both mental models at once.
@@ -87,6 +95,20 @@ edges:
     workflow: software-dev
     gate: gerardo-approval-required  # STOP. Ask first.
 ```
+
+```mermaid
+flowchart LR
+    CoS["chief-of-staff"] -->|"'build', 'implement', 'create'\ngate: none"| DC["delivery-coordinator"]
+    DC -->|"plan is ready\ngate: approval-required"| IT["implementation-team"]
+
+    linkStyle 0 stroke:#2f855a,stroke-width:2px
+    linkStyle 1 stroke:#c53030,stroke-width:2px
+    style CoS fill:#4a5568,color:#fff
+    style DC fill:#4a5568,color:#fff
+    style IT fill:#4a5568,color:#fff
+```
+
+Green: a routing edge, safe to cross alone — it just decides who handles the request, nothing happens yet. Red: a consequential edge — this is where the system stops and waits, every time, whether or not the model "feels" cautious in the moment.
 
 Two rules make this trustworthy instead of decorative:
 

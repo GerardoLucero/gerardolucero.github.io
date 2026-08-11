@@ -123,8 +123,13 @@ public class EncryptionService {
             // in a single operation. AES-CBC requires a separate HMAC step
             // to detect tampering; GCM's authentication tag does this natively.
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            // The secrets manager should hand you real key material, base64-encoded
+            // (e.g. generated with `openssl rand -base64 32`) — not a human passphrase.
+            // Decoding base64 instead of taking raw UTF-8 bytes of a typed string
+            // guarantees the correct AES-256 key length and avoids the low-entropy
+            // key you get from treating a password as key material.
             SecretKeySpec keySpec = new SecretKeySpec(
-                encryptionKey.getBytes(), "AES");
+                Base64.getDecoder().decode(encryptionKey), "AES");
 
             // A fresh random IV per encryption is critical for AES-GCM security.
             // Reusing the same IV with the same key under GCM is catastrophic —
@@ -159,7 +164,7 @@ public class EncryptionService {
             byte[] encrypted = Arrays.copyOfRange(encryptedWithIv, 12, encryptedWithIv.length);
 
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            SecretKeySpec keySpec = new SecretKeySpec(encryptionKey.getBytes(), "AES");
+            SecretKeySpec keySpec = new SecretKeySpec(Base64.getDecoder().decode(encryptionKey), "AES");
             GCMParameterSpec parameterSpec = new GCMParameterSpec(128, iv);
 
             cipher.init(Cipher.DECRYPT_MODE, keySpec, parameterSpec);
@@ -183,42 +188,45 @@ Use this to encrypt sensitive fields in your event payload before publishing, an
 
 Encryption prevents eavesdropping. Signing prevents spoofing and tampering. A digital signature attached to each event allows consumers to verify that the event was genuinely produced by the claimed service and hasn't been modified.
 
-**JWT-based event signing:**
+**What the first version of this got wrong:** the first pass at this signed each event with a JWT `exp` claim — standard JWT practice, reasoning that an expired signature should fail verification. That's the wrong default for an audit trail. Eighteen months later, when compliance needs to re-verify a `PaymentProcessedEvent` during an incident review, the signature check should not depend on whether a clock-based expiration from the original processing window has since passed. Expiration is a *replay-protection* concern — how long a consumer should treat an event as fresh — and it has nothing to do with whether the event's origin is still provable. Bolting `exp` onto the signature meant the two got conflated: the moment the JWT library's expiration check kicked in, the audit trail stopped being verifiable, which defeats the point of having one. The fix is to split them into two independent mechanisms.
+
+**JWT-based event signing — no `exp`, verifiable indefinitely:**
 ```java
 @Component
-public class JwtTokenProvider {
+public class EventSigner {
 
-    @Value("${jwt.secret}")
-    private String jwtSecret;
+    @Value("${event-signing.secret}")
+    private String signingSecret; // long-term key material — plan for rotation, see below
 
-    @Value("${jwt.expiration}")
-    private int jwtExpirationMs;
+    private SecretKey signingKey() {
+        return Keys.hmacShaKeyFor(signingSecret.getBytes(StandardCharsets.UTF_8));
+    }
 
-    // Generate a signed token that attaches to the event.
-    // HS512 is used here for its strength (512-bit HMAC-SHA).
+    // No expiration claim: this signature needs to stay verifiable for as
+    // long as compliance requires (years), and a library that rejects
+    // expired tokens by default would make that impossible.
     // For higher assurance environments, prefer RS256 with asymmetric keys
     // so consumers can verify without holding the signing key.
     public String generateEventToken(String producerService, String eventId) {
         return Jwts.builder()
-            .setSubject(producerService)
-            .setId(eventId)
-            .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+            .subject(producerService)
+            .id(eventId)
+            .issuedAt(new Date())
             .claim("event_id", eventId)
-            .signWith(SignatureAlgorithm.HS512, jwtSecret)
+            .signWith(signingKey())
             .compact();
     }
 
     public boolean validateEventToken(String token) {
         try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
+            Jwts.parser()
+                .verifyWith(signingKey())
+                .build()
+                .parseSignedClaims(token);
             return true;
         } catch (SignatureException e) {
             // Signature mismatch — event may have been tampered with or forged
             logger.error("Invalid event signature: {}", e.getMessage());
-        } catch (ExpiredJwtException e) {
-            // Replay attack window closed — expired tokens should not be processed
-            logger.error("Event token expired: {}", e.getMessage());
         } catch (MalformedJwtException | UnsupportedJwtException | IllegalArgumentException e) {
             logger.error("Invalid event token: {}", e.getMessage());
         }
@@ -226,6 +234,45 @@ public class JwtTokenProvider {
     }
 }
 ```
+
+**Replay protection — a consumer-side concern, kept separate:**
+```java
+@Component
+public class ReplayGuard {
+
+    private final RedisTemplate<String, String> redis;
+
+    // A processed event_id can't be reprocessed within the window — this
+    // is what "expiration" was actually protecting against. It has a TTL
+    // because replay windows should close; the signature above doesn't,
+    // because provenance shouldn't.
+    public boolean isReplay(String eventId, String consumerGroup) {
+        String key = "processed:" + consumerGroup + ":" + eventId;
+        Boolean firstSeen = redis.opsForValue().setIfAbsent(key, "1", Duration.ofHours(24));
+        return firstSeen == null || !firstSeen;
+    }
+}
+```
+
+One consequence worth planning for up front: because the signing key now has to outlive individual tokens by years, not minutes, key rotation needs a strategy — a `kid` (key ID) header per token and a small registry of retired-but-still-valid verification keys, so rotating the signing key doesn't retroactively invalidate every event signed before the rotation.
+
+```mermaid
+flowchart LR
+    E["Event"] --> S["EventSigner\nno exp — valid indefinitely"]
+    S --> PUB["Published to Kafka"]
+    PUB --> V{"validateEventToken\nsignature check"}
+    V -->|"invalid"| DLQ["Dead letter topic"]
+    V -->|"valid"| RG{"ReplayGuard\nTTL 24h, per consumer group"}
+    RG -->|"seen before"| DROP["Dropped — already processed"]
+    RG -->|"first time"| PROC["Processed"]
+
+    style S fill:#2b6cb0,color:#fff
+    style RG fill:#975a16,color:#fff
+    style DLQ fill:#c53030,color:#fff
+    style DROP fill:#c53030,color:#fff
+```
+
+Two independent checks, two different lifetimes: the signature (blue) never expires — it's still checkable by an auditor five years from now. The replay guard (amber) has a short TTL by design — its only job is rejecting the same event twice inside a processing window, and it should forget everything older than that window.
 
 **Event structure with signing:**
 ```json

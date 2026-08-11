@@ -314,4 +314,20 @@ A few things that matter in production that most tutorials don't cover:
 
 Kafka Streams is one of those libraries that looks simple until you hit the edge cases — late arrivals, rebalancing under load, changelog topic management. But when it's working well, it's genuinely elegant: your analytics pipeline runs inside your application, your state is durable, and you get exactly-once guarantees without a separate infrastructure cluster.
 
+---
+
+## What Didn't Work at First
+
+The first production deployment ran with the default `NUM_STANDBY_REPLICAS` of 0. That's fine until a rebalance happens — a pod restart, a rolling deploy, a node eviction — at which point Kafka Streams has to rebuild the RocksDB state store from the changelog topic from scratch on whichever instance picks up the partition. For a state store holding a few hours of windowed join state, that rebuild took several minutes, during which the affected partition simply stopped producing output. Nothing crashed, nothing errored — the pipeline just went quiet for a few minutes on every deploy, which is easy to miss unless partition lag is specifically what you're watching.
+
+Setting `NUM_STANDBY_REPLICAS = 1` doesn't eliminate the rebuild — it pre-warms a second copy of the state store on a different instance, so the takeover is a fast incremental sync instead of a full changelog replay. It costs extra disk and memory for a state store you're not actively serving from in steady state. That trade-off is worth stating plainly instead of just recommending the setting: you're paying continuous resources for a failure mode that might only show up once a week, during deploys.
+
+## If You're Building This
+
+1. **Set `NUM_STANDBY_REPLICAS ≥ 1` before your first production deploy**, not after the first rebalance-induced gap someone notices on a dashboard.
+2. **Pick your join window from the actual latency skew between your two streams**, not a round number — measure the real p99 arrival-time difference between the two topics first, then set the window with margin above that.
+3. **Alert on partition lag, not just consumer errors.** A rebuild-induced pause produces zero errors and looks identical to healthy-but-quiet unless lag is the signal you're watching.
+
+For how to build that lag-based alerting instead of guessing at it, see [Observability for Event-Driven Systems](/blog/observability-event-driven-systems).
+
 If you're building or scaling real-time analytics pipelines and want to compare approaches, I'd love to talk — luceroriosg@gmail.com.
