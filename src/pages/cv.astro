@@ -2,7 +2,7 @@
 import BaseLayout from "../components/layout/BaseLayout.astro";
 import cvData from "../content/cv/cv-data.json";
 
-const { personal, experience, education, skills, languages } = cvData;
+const { personal, experience, education, skills, languages, projects } = cvData;
 ---
 
 <BaseLayout
@@ -87,8 +87,33 @@ const { personal, experience, education, skills, languages } = cvData;
         </div>
       </section>
 
+      <!-- Projects -->
+      <section class="cv-section animate-fade-in-up delay-300">
+        <h2 class="section-title">Projects &amp; Open Source</h2>
+        <div class="projects-grid">
+          {projects.map((p) => (
+            <div class="project-card">
+              <div class="project-header">
+                <h3 class="project-name">{p.name}</h3>
+                {p.url && (
+                  <a href={p.url} target="_blank" rel="noopener" class="project-link" aria-label={`${p.name} on GitHub`}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M7 7h10v10"/></svg>
+                  </a>
+                )}
+              </div>
+              <p class="project-desc">{p.description}</p>
+              <div class="project-tags">
+                {p.tags.map((tag) => (
+                  <span class="badge badge-accent">{tag}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <!-- Two-column: Skills + Education -->
-      <div class="cv-two-col animate-fade-in-up delay-300">
+      <div class="cv-two-col animate-fade-in-up delay-400">
 
         <!-- Skills -->
         <section class="cv-section">
@@ -330,6 +355,60 @@ const { personal, experience, education, skills, languages } = cvData;
   }
 
   .job-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  /* ── Projects ───────────────────────── */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+
+  .project-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    transition: border-color 0.2s;
+  }
+
+  .project-card:hover { border-color: var(--color-primary); }
+
+  .project-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .project-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-heading);
+    margin: 0;
+  }
+
+  .project-link {
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    display: inline-flex;
+    transition: color 0.2s;
+  }
+
+  .project-link:hover { color: var(--color-primary-light); }
+
+  .project-desc {
+    font-size: 0.825rem;
+    color: var(--color-text-muted);
+    line-height: 1.7;
+    margin: 0 0 1rem;
+  }
+
+  .project-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  @media (max-width: 700px) {
+    .projects-grid { grid-template-columns: 1fr; }
+  }
 
   /* ── Two column layout ───────────────── */
   .cv-two-col {
