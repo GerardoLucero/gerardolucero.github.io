@@ -7,7 +7,7 @@
     "location": "Mexico City, Mexico",
     "linkedin": "https://linkedin.com/in/luceroriosg",
     "github": "https://github.com/GerardoLucero",
-    "summary": "Solutions Architect and DevSecOps Engineer with 7+ years building distributed systems across fintech and retail. Rare combination of platform architecture (Kafka, Kubernetes, IDP), security engineering (SAST/DAST, policy-as-code, container hardening), and technical product management. Track record of building Internal Developer Platforms, standardizing CI/CD pipelines at scale, and leading multi-team technical initiatives across AWS, GCP, and OpenShift. AI practitioner with applied experience in intelligent systems. Seeking remote roles in platform engineering, staff/principal engineering, or solutions architecture."
+    "summary": "Solutions Architect and DevSecOps Engineer with 7+ years building distributed systems across fintech and retail. Rare combination of platform architecture (Kafka, Kubernetes, IDP), security engineering (SAST/DAST, policy-as-code, container hardening), and technical product management. Track record of building Internal Developer Platforms, standardizing CI/CD pipelines at scale, and leading multi-team technical initiatives across AWS, GCP, and OpenShift. Operates a self-hosted 6-node Kubernetes platform as a live production testbed (GitOps, service mesh, secrets management, policy enforcement) and builds AI agent systems on top of it — from a multi-domain personal orchestration system to a suite of open-source developer tools. Seeking remote roles in platform engineering, staff/principal engineering, or solutions architecture."
   },
   "experience": [
     {
@@ -95,6 +95,31 @@
         "Full-stack development and team leadership"
       ],
       "tags": ["Node.js", "JavaScript", "React", "SQL", "REST APIs"]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Homelab IDP",
+      "description": "Production-grade Internal Developer Platform self-hosted on a 6-node Talos Kubernetes cluster — GitLab, ArgoCD, Harbor, Backstage, Vault, Kafka, Kyverno, and SonarQube wired into one golden-path pipeline. Running continuously as a personal production environment, not a demo.",
+      "url": "https://github.com/GerardoLucero/homelab-idp",
+      "tags": ["Kubernetes", "Talos", "ArgoCD", "Backstage", "Vault", "Kafka", "Kyverno", "GitOps"]
+    },
+    {
+      "name": "k8s-patterns",
+      "description": "Open-source library of production Kubernetes patterns extracted from operating the homelab cluster — multi-environment Helm charts, KEDA event-driven autoscaling, Traefik ingress, and observability wiring.",
+      "url": "https://github.com/GerardoLucero/k8s-patterns",
+      "tags": ["Kubernetes", "Helm", "KEDA", "Traefik", "Observability"]
+    },
+    {
+      "name": "AI career-intelligence suite",
+      "description": "A set of AI agents applying event-driven architecture to the job search itself: career-analyzer scores offers against a candidate profile over Kafka + Spring AI + Claude; offer-lens flags red flags and market salary gaps; interview-sim runs mock system-design and behavioral interviews; cv-stress-test pressure-tests a CV against synthetic hiring managers.",
+      "tags": ["Kafka", "Spring AI", "Claude", "TypeScript", "AI Agents"]
+    },
+    {
+      "name": "Mexican fintech open-source suite",
+      "description": "8+ published JavaScript libraries solving recurring compliance and data-validation gaps for Mexican fintech: RFC/CURP calculation with homoclave, CLABE validation, IMSS/ISR/payroll calculators, and SAT fiscal calendar tooling.",
+      "url": "https://github.com/GerardoLucero?tab=repositories&q=calcul+OR+validador+OR+mx-",
+      "tags": ["JavaScript", "Open Source", "Fintech", "Compliance"]
     }
   ],
   "education": [
@@ -208,7 +233,7 @@
     { "language": "English", "level": "Professional" }
   ],
   "metadata": {
-    "version": "1.0.0",
-    "lastUpdated": "2026-06-15"
+    "version": "1.1.0",
+    "lastUpdated": "2026-08-25"
   }
 }
