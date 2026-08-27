@@ -6,9 +6,9 @@ tags: ["event-driven-architecture", "migration", "microservices", "kafka", "arch
 draft: false
 ---
 
-**The most dangerous words in software architecture are "we'll rewrite it."** The big-bang rewrite freezes the existing system, creates parallel maintenance burden, and delivers nothing to users for months or years while the team reimplements functionality that already works. In production systems where downtime was not an option, I've seen this pattern fail repeatedly — and it almost always fails the same way.
+**The most dangerous words in software architecture are "we'll rewrite it."** The big-bang rewrite freezes the existing system, creates parallel maintenance burden, and delivers nothing to users for months or years while the team reimplements functionality that already works. In production systems where downtime was not an option, I've seen this pattern fail repeatedly, and it almost always fails the same way.
 
-There's a better way: the Strangler Fig pattern, named after the strangler fig tree that grows around an existing tree until it eventually replaces it. You extract capabilities incrementally, domain by domain, while the existing system keeps running. The monolith shrinks; the event-driven architecture grows. Eventually, the monolith is gone — but users never experienced a migration.
+There's a better way: the Strangler Fig pattern, named after the strangler fig tree that grows around an existing tree until it eventually replaces it. You extract capabilities incrementally, domain by domain, while the existing system keeps running. The monolith shrinks; the event-driven architecture grows. Eventually, the monolith is gone, but users never experienced a migration.
 
 This is a playbook for how to do that in practice.
 
@@ -16,17 +16,17 @@ This is a playbook for how to do that in practice.
 
 ## Why the Monolith Breaks Under Load
 
-Before the migration strategy, understand what actually breaks in a monolith at scale. It's not usually throughput — many monoliths handle impressive load. What breaks is:
+Before the migration strategy, understand what actually breaks in a monolith at scale. It's not usually throughput. Many monoliths handle impressive load. What breaks is:
 
 **Deployment coupling.** A bug in the notifications module forces a full deployment that includes the payment module. A schema change for reporting requires coordination across every team. Deployment frequency plummets because every release is a coordinated event. At a nationwide retail chain, this was the most visible symptom: a change to how store promotions were applied could delay a fix to the checkout flow by a week.
 
-**Temporal coupling.** All operations happen in a single transaction. A slow inventory check blocks the payment confirmation. A third-party payment gateway that hangs takes down the entire checkout flow — including features that have nothing to do with payments.
+**Temporal coupling.** All operations happen in a single transaction. A slow inventory check blocks the payment confirmation. A third-party payment gateway that hangs takes down the entire checkout flow, including features that have nothing to do with payments.
 
 **Scaling inefficiency.** You can't scale the checkout flow without scaling the admin panel. Resources are wasted, and the bottleneck module limits the performance of everything else. In e-commerce, Black Friday traffic to the order service shouldn't force you to scale your reporting module.
 
 **Organizational coupling.** As the system grows, so does the team. But a single codebase creates coordination overhead that grows with team size. Brooks' Law kicks in, and adding engineers makes things slower.
 
-The event-driven migration is fundamentally a decoupling exercise. You're not just changing the technical architecture — you're creating deployment independence, temporal independence, and organizational independence.
+The event-driven migration is fundamentally a decoupling exercise. You're not just changing the technical architecture. You're creating deployment independence, temporal independence, and organizational independence.
 
 ---
 
@@ -67,10 +67,10 @@ The team decides the monolith is too entangled to extract incrementally, so they
 The database is the most entangled part of any monolith. It's also the most tempting extraction target because "the real problem is the shared schema." Resist this. Extract domain services first and let them own their data. Shared database extraction is a consequence of domain extraction, not a prerequisite.
 
 **Anti-pattern 3: No Shadow Mode.**
-Teams skip the parallel-run phase because it feels wasteful — you're running the same logic twice. This is the most expensive shortcut in migrations. Shadow mode is where you discover the edge cases: the 3 a.m. batch job that the new service doesn't handle, the Brazilian Real currency formatting that only fails in production, the retry behavior that creates duplicate orders. Shadow mode catches these before users see them.
+Teams skip the parallel-run phase because it feels wasteful: you're running the same logic twice. This is the most expensive shortcut in migrations. Shadow mode is where you discover the edge cases: the 3 a.m. batch job that the new service doesn't handle, the Brazilian Real currency formatting that only fails in production, the retry behavior that creates duplicate orders. Shadow mode catches these before users see them.
 
 **Anti-pattern 4: Synchronous HTTP Between New Service and Monolith.**
-You extracted a service, but it still calls the monolith synchronously via REST. You've now created a distributed monolith — you have the operational complexity of microservices with none of the decoupling benefits. The event bus must come before the first extraction.
+You extracted a service, but it still calls the monolith synchronously via REST. You've now created a distributed monolith: you have the operational complexity of microservices with none of the decoupling benefits. The event bus must come before the first extraction.
 
 **Anti-pattern 5: Migrating Without Team Readiness.**
 A team that hasn't operated a production service before will struggle with "you build it, you run it." Extracting a service and handing it to a team that doesn't understand on-call rotations, runbooks, or SLA ownership is setting up the migration to fail at the organizational layer even if it succeeds technically.
@@ -95,7 +95,7 @@ This is the most practical decision in the entire migration. Picking wrong creat
 **Practical heuristics:**
 
 - In e-commerce: Notifications is almost always the right first extraction. It has a clear domain, it's called by everything but calls nothing critical in return, and teams feel the pain of notification failures leaking into checkout flows.
-- In financial systems: Audit/event logging is often the right first extraction. It needs to be reliable, it has a clear schema, and extracting it forces you to introduce the event bus — which sets up everything else.
+- In financial systems: Audit/event logging is often the right first extraction. It needs to be reliable, it has a clear schema, and extracting it forces you to introduce the event bus, which sets up everything else.
 - Avoid: Anything that touches the core entity (Order in e-commerce, Loan Application in credit). Extract the periphery first. The core is last.
 
 **Red flags that disqualify a candidate:**
@@ -129,7 +129,7 @@ The goal is to pick a module where extraction is both technically feasible and o
 
 This is the step most migration guides skip. Before you extract a single service, introduce Kafka into the monolith. Start publishing events from within the monolith itself.
 
-Why? Because events become the connective tissue of your new architecture. If you extract a service before you have events, you end up with synchronous HTTP calls between the new service and the monolith — which recreates the coupling in a distributed form.
+Why? Because events become the connective tissue of your new architecture. If you extract a service before you have events, you end up with synchronous HTTP calls between the new service and the monolith, which recreates the coupling in a distributed form.
 
 **Introduce an event publisher in the monolith:**
 ```java
@@ -246,7 +246,24 @@ public abstract class Aggregate {
 
 ## Phase 4: CQRS for Migrated Domains
 
-Once a domain is extracted, you can take advantage of CQRS to separate read models from write models. This is particularly valuable when the monolith had complex reporting queries mixed into the same database as transactional operations — a pattern I saw frequently in financial systems where the same tables served both real-time transaction processing and end-of-day regulatory reports.
+Once a domain is extracted, you can take advantage of CQRS to separate read models from write models. This is particularly valuable when the monolith had complex reporting queries mixed into the same database as transactional operations, a pattern I saw frequently in financial systems where the same tables served both real-time transaction processing and end-of-day regulatory reports.
+
+```mermaid
+flowchart LR
+    CMD["CreateUserCommand"] --> CH["CommandHandler"]
+    CH --> ES["EventStore\n(write model, source of truth)"]
+    CH --> EP["EventPublisher"]
+    EP --> K["Kafka: user-events"]
+    K --> RM["ReadModel\n@EventListener"]
+    Q["GetUserQuery"] --> QH["QueryHandler"]
+    QH --> RM
+
+    style CH fill:#2b6cb0,color:#fff
+    style QH fill:#2f855a,color:#fff
+    style RM fill:#975a16,color:#fff
+```
+
+Two independent paths, meeting only at the event stream. The write path never queries the read model, and the read model never mutates the write model directly. It only ever reacts to events already committed. That separation is what makes adding a new projection later a pure-addition change instead of a schema migration on the write side.
 
 ```java
 // Command side: write model, handles mutations.
@@ -318,7 +335,7 @@ public class UserReadModel {
 }
 ```
 
-The read model is rebuilt from events. If you need a new query shape — a new store performance dashboard, a new regulatory report format, a new fraud detection feed — you add a new projection without changing the write model or the event schema. This was exactly what made CQRS worth the investment at scale: read models become cheap to add.
+The read model is rebuilt from events. If you need a new query shape (a new store performance dashboard, a new regulatory report format, a new fraud detection feed), you add a new projection without changing the write model or the event schema. This was exactly what made CQRS worth the investment at scale: read models become cheap to add.
 
 ---
 
@@ -332,7 +349,7 @@ Once the new service has been running in production for a few weeks with proven 
 4. Monitor the system for 48-72 hours under production load
 5. Remove the dead code from the monolith
 
-**The critical step most teams miss:** don't delete the event publishing code. Even after the monolith module is decommissioned, the events it was publishing may be consumed by systems you don't control — third-party integrations, analytics pipelines, compliance feeds. Keep publishing events from wherever makes sense — either the new service or a migration proxy. Removing an event topic without auditing all consumers first is one of the most disruptive things you can do in an event-driven system.
+**The critical step most teams miss:** don't delete the event publishing code. Even after the monolith module is decommissioned, the events it was publishing may be consumed by systems you don't control — third-party integrations, analytics pipelines, compliance feeds. Keep publishing events from wherever makes sense: either the new service or a migration proxy. Removing an event topic without auditing all consumers first is one of the most disruptive things you can do in an event-driven system.
 
 ---
 
@@ -346,7 +363,7 @@ Once the new service has been running in production for a few weeks with proven 
 | 3 | Parallel run | 100% traffic to new service, monolith as fallback |
 | 4 | Decommission | Monolith module removed, no rollback in 30 days |
 
-Resist the pressure to accelerate this timeline. The "30-day no rollback" criterion before decommissioning is not conservative — it's the minimum viable confidence interval for production systems. In high-volume e-commerce, 30 days catches end-of-month billing cycles. In financial systems, it catches the monthly regulatory batch runs that only fail once per month.
+Resist the pressure to accelerate this timeline. The "30-day no rollback" criterion before decommissioning is not conservative. It's the minimum viable confidence interval for production systems. In high-volume e-commerce, 30 days catches end-of-month billing cycles. In financial systems, it catches the monthly regulatory batch runs that only fail once per month.
 
 ---
 
@@ -354,13 +371,13 @@ Resist the pressure to accelerate this timeline. The "30-day no rollback" criter
 
 The technical implementation is the easy part. What makes the migration hard:
 
-**Schema evolution.** Once consumers depend on your event schema, changing it requires backward-compatible evolution. Add fields; never remove them. Version your event types. In regulated environments where downstream consumers include regulatory systems, breaking a schema was not a "fix it Monday" problem — it was a compliance incident.
+**Schema evolution.** Once consumers depend on your event schema, changing it requires backward-compatible evolution. Add fields; never remove them. Version your event types. In regulated environments where downstream consumers include regulatory systems, breaking a schema was not a "fix it Monday" problem. It was a compliance incident.
 
 **Team readiness.** A team that hasn't operated a production service before will struggle with the "you build it, you run it" model. Invest in enabling work before extraction. At that same retail company, we spent two sprints on runbooks, alerting setup, and on-call shadowing before a squad took ownership of their first extracted service. That investment paid for itself in the first incident.
 
-**Testing the seam.** Integration tests for the Strangler Fig boundary — where the monolith hands off to the new service — are surprisingly hard to write. Invest in contract testing (Pact or similar) early. The shadow mode phase is also your best opportunity to build confidence: if the shadow service produces the same results as the monolith across 2 weeks of real production traffic, that's stronger evidence than any test suite.
+**Testing the seam.** Integration tests for the Strangler Fig boundary (where the monolith hands off to the new service) are surprisingly hard to write. Invest in contract testing (Pact or similar) early. The shadow mode phase is also your best opportunity to build confidence: if the shadow service produces the same results as the monolith across 2 weeks of real production traffic, that's stronger evidence than any test suite.
 
-The Strangler Fig pattern is not glamorous. It's methodical, it's slow, and it requires discipline to resist adding scope. But it delivers working software to users throughout the migration — and that's the only thing that actually matters.
+The Strangler Fig pattern is not glamorous. It's methodical, it's slow, and it requires discipline to resist adding scope. But it delivers working software to users throughout the migration, and that's the only thing that actually matters.
 
 ---
 

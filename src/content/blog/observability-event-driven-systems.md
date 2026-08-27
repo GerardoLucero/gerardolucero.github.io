@@ -1,14 +1,14 @@
 ---
 title: "Observability for Event-Driven Systems: The Metrics That Actually Matter"
-description: "Logs and dashboards are necessary but not sufficient. Here's how to build meaningful observability for event-driven systems — from SLO design to correlating events with business outcomes."
+description: "Logs and dashboards are necessary but not sufficient. Here's how to build meaningful observability for event-driven systems, from SLO design to correlating events with business outcomes."
 pubDate: 2026-05-10
 tags: ["observability", "kafka", "distributed-systems", "slo", "dynatrace", "grafana"]
 draft: false
 ---
 
-Event-driven systems fail quietly. In synchronous request-response architectures, a broken dependency surfaces immediately — the caller gets an error and the trace is complete. In production event-driven systems, a consumer can fall silently behind: no exception, no alert, just lag accumulating in a topic until a business metric finally drops and someone starts asking questions.
+Event-driven systems fail quietly. In synchronous request-response architectures, a broken dependency surfaces immediately: the caller gets an error and the trace is complete. In production event-driven systems, a consumer can fall silently behind: no exception, no alert, just lag accumulating in a topic until a business metric finally drops and someone starts asking questions.
 
-By the time the queue is tens of thousands of messages deep, the investigation becomes slow and expensive — especially when logs carry no correlation IDs and distributed traces stop at the broker boundary. The event effectively disappears.
+By the time the queue is tens of thousands of messages deep, the investigation becomes slow and expensive, especially when logs carry no correlation IDs and distributed traces stop at the broker boundary. The event effectively disappears.
 
 That failure mode is solvable, but it requires treating observability as a first-class design concern rather than a dashboard you add after the first incident. This post covers how to build it: which signals actually matter, how to propagate traces across event boundaries, and how to design SLOs for async systems where the usual latency model doesn't apply.
 
@@ -18,9 +18,9 @@ That failure mode is solvable, but it requires treating observability as a first
 
 Before going further, one distinction worth naming because most teams conflate them:
 
-**Monitoring** tells you when something is wrong — it's alert-based, threshold-driven, and answers "is X above or below Y?"
+**Monitoring** tells you when something is wrong: it's alert-based, threshold-driven, and answers "is X above or below Y?"
 
-**Observability** lets you understand *why* something is wrong — it's exploration-based, correlation-driven, and answers "what actually happened, and where?"
+**Observability** lets you understand *why* something is wrong: it's exploration-based, correlation-driven, and answers "what actually happened, and where?"
 
 You need both. But monitoring without observability means you know there's a fire and have no idea where it started.
 
@@ -28,7 +28,7 @@ You need both. But monitoring without observability means you know there's a fir
 
 ## How the Three Pillars Connect
 
-In an event-driven system, logs, metrics, and traces don't operate independently — they need to be correlated across the entire event pipeline. Here's how they fit together:
+In an event-driven system, logs, metrics, and traces don't operate independently. They need to be correlated across the entire event pipeline. Here's how they fit together:
 
 ```mermaid
 flowchart LR
@@ -48,15 +48,15 @@ flowchart LR
     producer & broker & consumer --> dashboard
 ```
 
-The broker is not a black box — it's an observable node. Consumer lag and throughput metrics from the broker, combined with traces that cross service boundaries and logs that carry shared IDs, are what make the complete picture possible.
+The broker is not a black box. It's an observable node. Consumer lag and throughput metrics from the broker, combined with traces that cross service boundaries and logs that carry shared IDs, are what make the complete picture possible.
 
 ---
 
 ## The Three Pillars, Applied to Events
 
-The three pillars of observability — logs, metrics, traces — map differently onto event-driven systems than they do onto synchronous request-response systems.
+The three pillars of observability (logs, metrics, traces) map differently onto event-driven systems than they do onto synchronous request-response systems.
 
-**Logs** in an event-driven system need to carry correlation IDs that span the entire event lifecycle, from producer to consumer. A log entry at the producer without a correlation ID is nearly useless — you can't trace it forward to what the consumer did with it.
+**Logs** in an event-driven system need to carry correlation IDs that span the entire event lifecycle, from producer to consumer. A log entry at the producer without a correlation ID is nearly useless: you can't trace it forward to what the consumer did with it.
 
 **Metrics** need to measure lag and throughput at the topic level, not just CPU and memory. Consumer group lag is the early warning signal for most event-driven failures.
 
@@ -119,7 +119,7 @@ public class StructuredLogger {
 }
 ```
 
-The critical fields are `traceId`, `correlationId`, and `eventId` — and they serve distinct purposes. `eventId` is about the event itself: idempotency, deduplication, delivery confirmation. `traceId` is about the distributed trace: what spans belong together in the observability tool. `correlationId` is about the business transaction: what logical flow does this event belong to, even across asynchronous gaps or retries that break trace continuity. You need all three.
+The critical fields are `traceId`, `correlationId`, and `eventId`, and they serve distinct purposes. `eventId` is about the event itself: idempotency, deduplication, delivery confirmation. `traceId` is about the distributed trace: what spans belong together in the observability tool. `correlationId` is about the business transaction: what logical flow does this event belong to, even across asynchronous gaps or retries that break trace continuity. You need all three.
 
 ### Business Metrics vs. Technical Metrics
 
@@ -181,7 +181,7 @@ public class BusinessMetrics {
 }
 ```
 
-The business metrics (`business.*`) tell you whether your system is delivering value. The technical metrics (`tech.*`) tell you why it might not be. Both are necessary — but during an incident, you need the business metrics first to understand scope, then the technical metrics to find the root cause.
+The business metrics (`business.*`) tell you whether your system is delivering value. The technical metrics (`tech.*`) tell you why it might not be. Both are necessary, but during an incident, you need the business metrics first to understand scope, then the technical metrics to find the root cause.
 
 ---
 
@@ -328,7 +328,7 @@ public class EventDrivenSLOMonitor {
 }
 ```
 
-The latency SLO is particularly interesting: different consumer groups have different latency requirements, and this should be made explicit rather than assumed. Payment processing has a tighter SLO than analytics aggregation — but so does fraud detection vs. reporting, or inventory reservation vs. audit logging. Define SLO classes per consumer type: real-time consumers (payments, fraud, inventory) typically need sub-second P95 latency and lag alerts in the hundreds; near-real-time consumers (notifications, search indexing) can tolerate a few seconds and lag in the low thousands; batch consumers (analytics, reporting, compliance) may have no meaningful lag SLO at all, only an availability SLO over a daily window. Alert thresholds, on-call routing, and error budgets should all differ by class.
+The latency SLO is particularly interesting: different consumer groups have different latency requirements, and this should be made explicit rather than assumed. Payment processing has a tighter SLO than analytics aggregation, but so does fraud detection vs. reporting, or inventory reservation vs. audit logging. Define SLO classes per consumer type: real-time consumers (payments, fraud, inventory) typically need sub-second P95 latency and lag alerts in the hundreds; near-real-time consumers (notifications, search indexing) can tolerate a few seconds and lag in the low thousands; batch consumers (analytics, reporting, compliance) may have no meaningful lag SLO at all, only an availability SLO over a daily window. Alert thresholds, on-call routing, and error budgets should all differ by class.
 
 ---
 
@@ -338,7 +338,7 @@ In my experience, consumer group lag is the single most actionable metric in eve
 
 1. A consumer is processing events slower than they're being produced
 2. A consumer has crashed and isn't processing at all
-3. A sudden spike in production rate (expected — traffic surge — or unexpected — runaway publisher)
+3. A sudden spike in production rate (expected: traffic surge, or unexpected: runaway publisher)
 
 **Grafana alerting rule:**
 ```yaml
@@ -372,15 +372,15 @@ Set the lag alert threshold based on your latency SLO. If your SLO requires P95 
 
 If you're starting from scratch, don't try to instrument everything at once. These are the five alerts I'd stand up first, in priority order:
 
-1. **Consumer group lag > threshold (by SLO class)** — catches the most common failure mode silently accumulating before anyone notices in the UI. A stopped consumer with zero errors is otherwise invisible.
+1. **Consumer group lag > threshold (by SLO class):** catches the most common failure mode silently accumulating before anyone notices in the UI. A stopped consumer with zero errors is otherwise invisible.
 
-2. **Business success rate drop** — e.g., `business.payments.success.total` rate drops more than 10% below baseline. This is your customer-impact signal. It fires when something is actually broken for users, not just when infrastructure is stressed.
+2. **Business success rate drop:** e.g., `business.payments.success.total` rate drops more than 10% below baseline. This is your customer-impact signal. It fires when something is actually broken for users, not just when infrastructure is stressed.
 
-3. **Dead letter topic (DLQ) message count increasing** — events landing in DLQ means your system is swallowing failures. A growing DLQ is a slow disaster that teams often discover too late.
+3. **Dead letter topic (DLQ) message count increasing:** events landing in DLQ means your system is swallowing failures. A growing DLQ is a slow disaster that teams often discover too late.
 
-4. **Producer throughput deviation** — a sudden spike or sudden drop in `business.orders.created.total` rate often signals either a runaway publisher or a broken upstream integration. Both look like normal operation without this alert.
+4. **Producer throughput deviation:** a sudden spike or sudden drop in `business.orders.created.total` rate often signals either a runaway publisher or a broken upstream integration. Both look like normal operation without this alert.
 
-5. **End-to-end event processing P95 latency breach** — once traces are instrumented, alert on the full producer-to-consumer latency, not just consumer-side processing time. This catches broker slowdowns, partition rebalancing, and network issues that are invisible to individual service metrics.
+5. **End-to-end event processing P95 latency breach:** once traces are instrumented, alert on the full producer-to-consumer latency, not just consumer-side processing time. This catches broker slowdowns, partition rebalancing, and network issues that are invisible to individual service metrics.
 
 Add infrastructure alerts (CPU, memory, GC pause) after these. They're useful for root cause investigation but not for detecting that something is actually wrong for users.
 
@@ -390,15 +390,15 @@ Add infrastructure alerts (CPU, memory, GC pause) after these. They're useful fo
 
 When an alert fires for an event-driven system, the investigation follows a specific path:
 
-1. **Check consumer group lag** — is a consumer falling behind or stopped? A lag that's growing linearly suggests a slow consumer or a throughput spike. A lag that's flat and high suggests the consumer stopped entirely — check if the pod is running and if there are rebalancing events in the broker logs.
+1. **Check consumer group lag:** is a consumer falling behind or stopped? A lag that's growing linearly suggests a slow consumer or a throughput spike. A lag that's flat and high suggests the consumer stopped entirely — check if the pod is running and if there are rebalancing events in the broker logs.
 
-2. **Check business metrics** — what's the impact? Are orders failing? Are payments not processing? A lag spike in a notification topic may be acceptable for minutes; the same spike in a payment topic means active revenue impact. The business metrics tell you how urgent the response needs to be.
+2. **Check business metrics:** what's the impact? Are orders failing? Are payments not processing? A lag spike in a notification topic may be acceptable for minutes; the same spike in a payment topic means active revenue impact. The business metrics tell you how urgent the response needs to be.
 
-3. **Check producer throughput** — did publishing spike unexpectedly? Compare current `events.published` rate against the rolling baseline. A 10x spike often means a retry loop, a batch job that ran early, or an upstream system recovering from its own outage and replaying.
+3. **Check producer throughput:** did publishing spike unexpectedly? Compare current `events.published` rate against the rolling baseline. A 10x spike often means a retry loop, a batch job that ran early, or an upstream system recovering from its own outage and replaying.
 
-4. **Follow the trace** — find a failing event by `eventId` or `correlationId` in your log search, then use the `traceId` to pull the full distributed trace in Dynatrace or Jaeger. This shows exactly which span failed, what the error was, and how long each stage took. Without traces propagated across the event boundary, this step becomes manual log archaeology.
+4. **Follow the trace:** find a failing event by `eventId` or `correlationId` in your log search, then use the `traceId` to pull the full distributed trace in Dynatrace or Jaeger. This shows exactly which span failed, what the error was, and how long each stage took. Without traces propagated across the event boundary, this step becomes manual log archaeology.
 
-5. **Check dead letter topics** — are events accumulating there? DLQ messages include the original event and (if your consumer is instrumented correctly) the exception that caused the failure. Often you'll find a schema mismatch, a null field, or a downstream dependency that's returning 500s for a specific event type.
+5. **Check dead letter topics:** are events accumulating there? DLQ messages include the original event and (if your consumer is instrumented correctly) the exception that caused the failure. Often you'll find a schema mismatch, a null field, or a downstream dependency that's returning 500s for a specific event type.
 
 This is why the instrumentation matters: each step requires specific data. Without business metrics, you can't answer step 2. Without distributed traces, you can't do step 4. Without DLQ monitoring, you miss step 5 entirely.
 
@@ -406,4 +406,4 @@ This is why the instrumentation matters: each step requires specific data. Witho
 
 Observability is a feature, not an afterthought. The teams that build it in from the start spend their incidents doing root cause analysis. The teams that skip it spend their incidents in the dark.
 
-If you're building out observability for an event-driven system and want to compare approaches — especially around SLO design and trace propagation — I'd enjoy the conversation at luceroriosg@gmail.com.
+If you're building out observability for an event-driven system and want to compare approaches (especially around SLO design and trace propagation), I'd enjoy the conversation at luceroriosg@gmail.com.
