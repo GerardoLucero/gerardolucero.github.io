@@ -1,5 +1,5 @@
 ---
-title: "Cells, Not Chiefs of Staff: A Different Direction for AI Agents"
+title: "Cells, Not Harnesses: A Different Direction for AI Agents"
 description: "Every AI agent framework right now converges on the same shape: a bigger, more instrumented harness. A different lineage (artificial life, evolutionary computation) asks a different question. Here's the direction I want to explore next."
 pubDate: 2026-08-25
 draft: false
