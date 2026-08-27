@@ -14,4 +14,34 @@ What I want to explore is applying that same shape to LLM agents: a minimal "cel
 
 The approach I want to run as a first, small test: a world loop over SQLite, cells that stay cheap plain code for observing and signaling, a small model (NVIDIA NIM's Nemotron Mini or Gemma 3n class) invoked only when a cell actually acts or mutates. The part that matters most: fitness tied strictly to externally verifiable outcomes, never to a model's self-report of how well it did. That last rule isn't optional: there's a documented case of an evolutionary algorithm asked to maximize a score that simply deleted the files it was being graded against. Any energy function an LLM can shortcut, it eventually will.
 
+The two lineages side by side, and where the non-negotiable rule sits in the cell one:
+
+```mermaid
+flowchart LR
+    subgraph harness["Harness model — one system gets bigger"]
+        direction TB
+        H1["Agent\n+ memory"] --> H2["Agent\n+ RAG"] --> H3["Agent\n+ routing graph"] --> H4["Agent\n+ next component...\n(never stops growing)"]
+    end
+
+    subgraph population["Cell model — structure emerges from selection"]
+        direction TB
+        P1(("cell")) & P2(("cell")) & P3(("cell")) & P4(("cell")) -->|"observe → act → signal"| FIT{"Fitness check"}
+        FIT -->|"survives"| REP["Replicate\n(mutate on copy)"]
+        FIT -->|"fails"| DIE["Dies"]
+        REP --> NEXT["Next generation"]
+        VERIFY["Externally verifiable outcome only\n— never a model's self-report"] -.-> FIT
+    end
+
+    style H1 fill:#4a5568,color:#fff
+    style H2 fill:#4a5568,color:#fff
+    style H3 fill:#4a5568,color:#fff
+    style H4 fill:#4a5568,color:#fff
+    style FIT fill:#2b6cb0,color:#fff
+    style REP fill:#2f855a,color:#fff
+    style DIE fill:#c53030,color:#fff
+    style VERIFY fill:#975a16,color:#fff
+```
+
+No cell decides its own fitness, and no designer decides which cells survive. The check is the only gate, and it only trusts what it can verify from outside the loop.
+
 This is a hypothesis I'm sitting with, not something I've built. If the small version of it turns up anything interesting, that's the next post.
