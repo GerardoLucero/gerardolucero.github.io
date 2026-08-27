@@ -1,20 +1,20 @@
 ---
 title: "Event-Driven Architecture: The Four Patterns You Actually Need in Production"
-description: "A deep dive into Event Sourcing, Pub/Sub, CQRS, and secure event design — with real Java/Spring Boot code for financial-grade systems."
+description: "A deep dive into Event Sourcing, Pub/Sub, CQRS, and secure event design, with real Java/Spring Boot code for financial-grade systems."
 pubDate: 2026-03-29
 tags: ["event-driven-architecture", "kafka", "java", "microservices", "distributed-systems"]
 draft: false
 ---
 
-Synchronous architectures fail in two predictable ways at scale: cascading outages when a downstream service is slow or unavailable, and audit gaps that collapse under regulatory scrutiny. Event-driven architecture solves both — but only if you apply the right patterns. Most EDA tutorials stop at Pub/Sub. In production financial systems, that's not enough.
+Synchronous architectures fail in two predictable ways at scale: cascading outages when a downstream service is slow or unavailable, and audit gaps that collapse under regulatory scrutiny. Event-driven architecture solves both, but only if you apply the right patterns. Most EDA tutorials stop at Pub/Sub. In production financial systems, that's not enough.
 
-This post covers the four patterns that actually matter in high-compliance, high-throughput environments: Event Sourcing, Pub/Sub, CQRS, and secure event design. Not theory — implementations battle-tested with Spring Boot and Kafka, including the part most tutorials skip: security at the event layer.
+This post covers the four patterns that actually matter in high-compliance, high-throughput environments: Event Sourcing, Pub/Sub, CQRS, and secure event design. Not theory. Implementations battle-tested with Spring Boot and Kafka, including the part most tutorials skip: security at the event layer.
 
 ---
 
 ## Why Events First?
 
-Before the patterns, the *why*. Synchronous request-response architectures create invisible coupling. When Service A calls Service B directly, you've bound their lifecycles together — a B outage becomes an A outage. At scale, this becomes a distributed monolith.
+Before the patterns, the *why*. Synchronous request-response architectures create invisible coupling. When Service A calls Service B directly, you've bound their lifecycles together: a B outage becomes an A outage. At scale, this becomes a distributed monolith.
 
 At a multi-unit fintech lender, credit scoring, disbursement, collections, and fraud detection all needed to react to loan application state changes. Wiring those together with REST calls would have created a dependency graph that made deployments a coordination nightmare. Events let each team own their reaction to what happened, without being coupled to the service that produced it.
 
@@ -31,7 +31,7 @@ Let's get into the patterns.
 
 ## Pattern 1: Event Sourcing
 
-In a traditional account system you store the current balance — that's it. If a regulator asks "how did this account get to this balance?" you reconstruct it from logs, audit tables, or whatever your team remembered to add. Event Sourcing makes that reconstruction the primary model. You store the sequence of things that happened, and current state is always derived by replaying them.
+In a traditional account system you store the current balance. That's it. If a regulator asks "how did this account get to this balance?" you reconstruct it from logs, audit tables, or whatever your team remembered to add. Event Sourcing makes that reconstruction the primary model. You store the sequence of things that happened, and current state is always derived by replaying them.
 
 ```mermaid
 block-beta
@@ -44,7 +44,7 @@ block-beta
   end
 ```
 
-This matters in regulated financial environments because the log is the truth — not a side effect of it. You get tamper-evident history, the ability to replay to any point in time, and a foundation for the CQRS pattern below.
+This matters in regulated financial environments because the log is the truth, not a side effect of it. You get tamper-evident history, the ability to replay to any point in time, and a foundation for the CQRS pattern below.
 
 The base event and aggregate classes are deliberately thin. The aggregate collects uncommitted events before they're persisted so you can unit test domain logic without touching a database:
 
@@ -114,15 +114,15 @@ public interface EventStore {
 }
 ```
 
-**When to use it:** When you need a full audit trail, when "undo" is a business requirement, or when rebuilding state from scratch needs to be possible (e.g., regulatory replay requests). At a credit reporting company, credit bureau data has strict retention and traceability requirements — this pattern fits naturally.
+**When to use it:** When you need a full audit trail, when "undo" is a business requirement, or when rebuilding state from scratch needs to be possible (e.g., regulatory replay requests). At a credit reporting company, credit bureau data has strict retention and traceability requirements, so this pattern fits naturally.
 
-**When to avoid it:** For simple CRUD entities where history has no business value. Event Sourcing adds operational complexity — snapshots, schema evolution, projection rebuilds. Don't use it everywhere.
+**When to avoid it:** For simple CRUD entities where history has no business value. Event Sourcing adds operational complexity: snapshots, schema evolution, projection rebuilds. Don't use it everywhere.
 
 ---
 
 ## Pattern 2: Pub/Sub with Kafka
 
-Once a loan application changes state — approved, disbursed, defaulted — seven different downstream systems need to know: collections, fraud, reporting, customer notifications, the scoring model, the ledger, the CRM. You cannot afford to call all of them synchronously from the originating service. One slow consumer stalls the whole operation.
+Once a loan application changes state (approved, disbursed, defaulted), seven different downstream systems need to know: collections, fraud, reporting, customer notifications, the scoring model, the ledger, the CRM. You cannot afford to call all of them synchronously from the originating service. One slow consumer stalls the whole operation.
 
 Pub/Sub decouples that fan-out. The producer publishes one event; each consumer group receives it independently, processes at its own pace, and fails without affecting the others.
 
@@ -192,7 +192,7 @@ spring:
           contentType: application/json
 ```
 
-**Key production consideration:** consumer groups are your scaling unit. Each group gets every message independently. Within a group, Kafka distributes partitions across instances. Design your partition key carefully — it determines ordering guarantees. For financial transactions, partition by account ID so all events for the same account are processed in order by the same consumer instance.
+**Key production consideration:** consumer groups are your scaling unit. Each group gets every message independently. Within a group, Kafka distributes partitions across instances. Design your partition key carefully: it determines ordering guarantees. For financial transactions, partition by account ID so all events for the same account are processed in order by the same consumer instance.
 
 ---
 
@@ -200,7 +200,7 @@ spring:
 
 In a high-volume lending system, the write path and the read path have fundamentally different shapes. Writing a loan application event is a narrow operation: validate, append, publish. Querying the loan portfolio for a collections dashboard is the opposite: aggregates, joins, filters across millions of records. If both go through the same model, you end up optimizing for neither.
 
-CQRS separates them entirely. Commands mutate state and produce events. Queries read from projections — denormalized read models built specifically for the query pattern they serve.
+CQRS separates them entirely. Commands mutate state and produce events. Queries read from projections: denormalized read models built specifically for the query pattern they serve.
 
 ```mermaid
 flowchart TD
@@ -282,13 +282,13 @@ public class TransactionReadModel {
 }
 ```
 
-**The real benefit:** multiple read models for the same event stream, each optimized for a different use case — fast single-record lookup, a search index, a reporting aggregate, a collections queue. None of them affect the write path. At that same fintech platform, we had the same transaction event stream feeding separate projections for operations, finance, and regulatory reporting — each one shaped for its consumer.
+**The real benefit:** multiple read models for the same event stream, each optimized for a different use case: fast single-record lookup, a search index, a reporting aggregate, a collections queue. None of them affect the write path. At that same fintech platform, we had the same transaction event stream feeding separate projections for operations, finance, and regulatory reporting, each one shaped for its consumer.
 
 ---
 
 ## Pattern 4: Secure Event Design
 
-In regulated industries, events aren't just data — they're evidence. At a credit bureau, an event saying a credit inquiry was made is legally significant. At a lending company, a disbursement event triggers downstream obligations. If those events can be forged, replayed out of order, or read by an unauthorized service, you have a compliance problem that no amount of application-layer access control will fix.
+In regulated industries, events aren't just data. They're evidence. At a credit bureau, an event saying a credit inquiry was made is legally significant. At a lending company, a disbursement event triggers downstream obligations. If those events can be forged, replayed out of order, or read by an unauthorized service, you have a compliance problem that no amount of application-layer access control will fix.
 
 Security belongs at the event layer, not above it.
 
@@ -310,7 +310,7 @@ public class AuthenticatedEventPublisher implements EventPublisher {
 }
 ```
 
-**Envelope encryption** protects the payload contents. Even if an attacker gains read access to the Kafka broker — which is a realistic threat model for multi-tenant or cloud-hosted clusters — they cannot read customer data without the decryption key. PII fields in financial events (RFC, CURP, account numbers) should always be encrypted before they leave the originating service:
+**Envelope encryption** protects the payload contents. Even if an attacker gains read access to the Kafka broker (a realistic threat model for multi-tenant or cloud-hosted clusters), they cannot read customer data without the decryption key. PII fields in financial events (RFC, CURP, account numbers) should always be encrypted before they leave the originating service:
 
 ```java
 @Component
@@ -367,7 +367,7 @@ Five rules I enforce in every production system:
 4. **Idempotent consumers** — design every handler to be safely re-entrant
 5. **Dead letter queues** — every consumer needs a DLQ and a retry policy
 
-The idempotency rule is especially important in financial systems. In financial systems, a disbursement event being processed twice is not a logging problem — it's a money problem. Every consumer that touches money or credit state needs to track which event IDs it has already processed.
+The idempotency rule is especially important in financial systems. In financial systems, a disbursement event being processed twice is not a logging problem. It's a money problem. Every consumer that touches money or credit state needs to track which event IDs it has already processed.
 
 ---
 
@@ -386,13 +386,13 @@ The result is a system that is auditable by design, independently scalable at ea
 
 ## What Didn't Work at First
 
-The first version of the read-side projections in a system like this rebuilt directly from the event store on every deploy: replay every event since the beginning, rebuild the read model, swap it in. That's fine for a young event log. It stops being fine once the log passes a few million events — replay time grows without bound, and eventually a deploy that used to take two minutes takes forty, which either blocks releases or gets "temporarily" skipped. Skipping it is the worst possible response in a system whose entire premise is that the event log is the source of truth.
+The first version of the read-side projections in a system like this rebuilt directly from the event store on every deploy: replay every event since the beginning, rebuild the read model, swap it in. That's fine for a young event log. It stops being fine once the log passes a few million events: replay time grows without bound, and eventually a deploy that used to take two minutes takes forty, which either blocks releases or gets "temporarily" skipped. Skipping it is the worst possible response in a system whose entire premise is that the event log is the source of truth.
 
-The fix is snapshotting: periodically persist the projection's state alongside the event offset it represents, and on rebuild, replay only the events after the last snapshot instead of from genesis. It looks like an optimization you can add later. Treat it as a requirement from day one instead — once a projection is already too slow to rebuild, you can't safely rebuild it to retrofit the snapshot logic either. That's the trap.
+The fix is snapshotting: periodically persist the projection's state alongside the event offset it represents, and on rebuild, replay only the events after the last snapshot instead of from genesis. It looks like an optimization you can add later. Treat it as a requirement from day one instead: once a projection is already too slow to rebuild, you can't safely rebuild it to retrofit the snapshot logic either. That's the trap.
 
 ## If You're Applying This to Your Own System
 
-1. **Start with the write side, not the topics.** Get Event Sourcing right for your core aggregates before you design a single Kafka topic — the events you'll publish should fall out of the domain model, not be invented to fit a messaging tool.
+1. **Start with the write side, not the topics.** Get Event Sourcing right for your core aggregates before you design a single Kafka topic. The events you'll publish should fall out of the domain model, not be invented to fit a messaging tool.
 2. **Design your partition key before your first consumer.** It's the one decision that's expensive to change later, because changing it means every downstream ordering guarantee changes with it.
 3. **Build the DLQ and the idempotency check in the first consumer, not the fifth.** Retrofitting idempotency onto a consumer that's already in production, already processing real money or state, is a much harder migration than starting with it.
 4. **Add snapshotting to your projections before you need it,** not after a rebuild starts timing out in production.
